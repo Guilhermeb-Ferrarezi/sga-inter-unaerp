@@ -6,12 +6,7 @@ import { Section } from "@/components/ui/section";
 import { FilterPill } from "@/components/ui/filter-pill";
 import { MatchCard } from "@/components/cards/MatchCard";
 import { LiveMatchFeature } from "@/components/home/LiveMatchFeature";
-import {
-  matches,
-  liveMatches,
-  upcomingMatches,
-  doneMatches,
-} from "@/data/mock";
+import { useEditionMatches, isLive, isUpcoming, isDone } from "@/lib/use-matches";
 import { cn } from "@/lib/utils";
 import type { Match } from "@/data/types";
 
@@ -26,17 +21,27 @@ function MatchesPage() {
   const [tab, setTab] = useState<Tab>("all");
   const [group, setGroup] = useState<GroupFilter>("all");
 
+  // 🌐 GraphQL — partidas reais da edição ativa
+  const { matches, loading, error } = useEditionMatches("valorant");
+
   const filtered = useMemo(() => {
     let list: Match[] = matches;
-    if (tab === "live") list = liveMatches();
-    else if (tab === "upcoming") list = upcomingMatches();
-    else if (tab === "done") list = doneMatches();
+    if (tab === "live") list = list.filter(isLive);
+    else if (tab === "upcoming") list = list.filter(isUpcoming);
+    else if (tab === "done") list = list.filter(isDone);
     if (group !== "all") list = list.filter((m) => m.group === group);
     return list;
-  }, [tab, group]);
+  }, [matches, tab, group]);
 
   const grouped = useMemo(() => groupByDate(filtered), [filtered]);
-  const featuredLive = liveMatches()[0];
+  const featuredLive = matches.find(isLive);
+
+  const counts = useMemo(() => ({
+    all: matches.length,
+    live: matches.filter(isLive).length,
+    upcoming: matches.filter(isUpcoming).length,
+    done: matches.filter(isDone).length,
+  }), [matches]);
 
   return (
     <>
@@ -54,10 +59,10 @@ function MatchesPage() {
         <div className="flex gap-1 mt-6 border-b-2 border-navy">
           {(
             [
-              ["all", `Todas (${matches.length})`],
-              ["live", `Ao Vivo (${liveMatches().length})`],
-              ["upcoming", `Próximas (${upcomingMatches().length})`],
-              ["done", `Disputadas (${doneMatches().length})`],
+              ["all", `Todas (${counts.all})`],
+              ["live", `Ao Vivo (${counts.live})`],
+              ["upcoming", `Próximas (${counts.upcoming})`],
+              ["done", `Disputadas (${counts.done})`],
             ] as [Tab, string][]
           ).map(([k, label]) => (
             <button
@@ -95,11 +100,21 @@ function MatchesPage() {
       </PageHeader>
 
       <Section decoNum="VS">
-        {tab !== "done" && featuredLive && tab !== "upcoming" && (
+        {loading && (
+          <div className="text-center py-16 text-fg-mute font-display italic font-extrabold uppercase">
+            Carregando partidas…
+          </div>
+        )}
+        {error && (
+          <div className="text-center py-16 text-red-500 font-display italic font-extrabold uppercase">
+            Erro ao carregar partidas
+          </div>
+        )}
+        {!loading && tab !== "done" && featuredLive && tab !== "upcoming" && (
           <LiveMatchFeature match={featuredLive} />
         )}
 
-        {grouped.map(({ label, weekday, items }, idx) => (
+        {!loading && grouped.map(({ label, weekday, items }, idx) => (
           <motion.div
             key={label}
             initial={{ opacity: 0, y: 12 }}

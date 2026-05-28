@@ -8,10 +8,25 @@ export const Route = createFileRoute("/entrar")({
   component: LoginPage,
 });
 
-const SGA_AUTH_URL =
-  import.meta.env.VITE_SGA_AUTH_URL ?? "https://santos-games.com/login";
+const SGA_AUTH_BASE =
+  import.meta.env.VITE_SGA_AUTH_URL ?? "https://auth.santos-games.com";
+
+// Constrói URL no formato esperado pelo auth-web da SGA:
+// {base}?client_id=inter-unaerp&redirect_uri={absolute callback}
+function buildAuthUrl() {
+  const origin =
+    typeof window !== "undefined" ? window.location.origin : "https://santos-games.com";
+  const basePath = import.meta.env.BASE_URL || "/";
+  const redirectUri = `${origin}${basePath}auth/callback`.replace(/\/+/g, "/").replace(":/", "://");
+  const params = new URLSearchParams({
+    client_id: "inter-unaerp",
+    redirect_uri: redirectUri,
+  });
+  return `${SGA_AUTH_BASE}?${params.toString()}`;
+}
 
 function LoginPage() {
+  const sgaAuthUrl = buildAuthUrl();
   return (
     <div className="min-h-screen bg-bg relative overflow-hidden flex items-center justify-center px-7 py-16">
       <div
@@ -71,7 +86,7 @@ function LoginPage() {
           />
         </div>
 
-        <a href={SGA_AUTH_URL}>
+        <a href={sgaAuthUrl}>
           <Button size="lg" className="w-full">
             <ArrowSquareOut weight="bold" size={14} />
             Continuar no portal SGA

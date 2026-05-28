@@ -11,21 +11,11 @@ const MATCHES_QUERY = gql`
       scheduledAt
       teamA {
         id
-        team {
-          id
-          name
-          slug
-          primaryColor
-        }
+        team { id name slug primaryColor }
       }
       teamB {
         id
-        team {
-          id
-          name
-          slug
-          primaryColor
-        }
+        team { id name slug primaryColor }
       }
       result {
         id
@@ -35,9 +25,7 @@ const MATCHES_QUERY = gql`
         playedAt
         winner {
           id
-          team {
-            slug
-          }
+          team { slug }
         }
       }
     }
@@ -66,12 +54,13 @@ type GqlMatch = {
 };
 
 const groupHeuristic = (round: string): Match["group"] => {
-  if (/grupo\s*a/i.test(round)) return "A";
-  if (/grupo\s*b/i.test(round)) return "B";
-  if (/grupo\s*c/i.test(round)) return "C";
-  if (/quart/i.test(round)) return "Quartas";
-  if (/semi/i.test(round)) return "Semi";
-  if (/final/i.test(round)) return "Final";
+  const r = round.toLowerCase();
+  if (r.includes("grupo a")) return "A";
+  if (r.includes("grupo b")) return "B";
+  if (r.includes("grupo c")) return "C";
+  if (r.includes("quart")) return "Quartas";
+  if (r.includes("semi")) return "Semi";
+  if (r.includes("final")) return "Final";
   return "A";
 };
 
@@ -106,10 +95,6 @@ interface UseEditionMatchesResult {
   error: boolean;
 }
 
-/**
- * Carrega partidas + times da edição ativa.
- * Times vêm pra que cards de partida possam resolver shortName/color.
- */
 export function useEditionMatches(gameSlug: string = "valorant"): UseEditionMatchesResult {
   const editionData = useEditionTeams(gameSlug);
   const { data, loading, error } = useQuery<{ matches: GqlMatch[] }>(MATCHES_QUERY, {
@@ -125,3 +110,8 @@ export function useEditionMatches(gameSlug: string = "valorant"): UseEditionMatc
     error: editionData.error || !!error,
   };
 }
+
+// Helper de filtros
+export const isLive = (m: Match) => m.status === "live";
+export const isUpcoming = (m: Match) => m.status === "scheduled";
+export const isDone = (m: Match) => m.status === "done";

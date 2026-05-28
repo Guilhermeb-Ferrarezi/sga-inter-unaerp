@@ -24,6 +24,7 @@ import { Route as TimesSlugRouteImport } from './routes/times/$slug'
 import { Route as JogadoresIdRouteImport } from './routes/jogadores/$id'
 import { Route as EdicoesYearRouteImport } from './routes/edicoes/$year'
 import { Route as ConfrontosIdRouteImport } from './routes/confrontos/$id'
+import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as AdminTimesRouteImport } from './routes/admin/times'
 import { Route as AdminMidiaRouteImport } from './routes/admin/midia'
 import { Route as AdminJogadoresRouteImport } from './routes/admin/jogadores'
@@ -107,6 +108,11 @@ const ConfrontosIdRoute = ConfrontosIdRouteImport.update({
   path: '/confrontos/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: '/auth/callback',
+  path: '/auth/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminTimesRoute = AdminTimesRouteImport.update({
   id: '/times',
   path: '/times',
@@ -157,6 +163,7 @@ export interface FileRoutesByFullPath {
   '/admin/jogadores': typeof AdminJogadoresRoute
   '/admin/midia': typeof AdminMidiaRoute
   '/admin/times': typeof AdminTimesRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/confrontos/$id': typeof ConfrontosIdRoute
   '/edicoes/$year': typeof EdicoesYearRoute
   '/jogadores/$id': typeof JogadoresIdRoute
@@ -180,6 +187,7 @@ export interface FileRoutesByTo {
   '/admin/jogadores': typeof AdminJogadoresRoute
   '/admin/midia': typeof AdminMidiaRoute
   '/admin/times': typeof AdminTimesRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/confrontos/$id': typeof ConfrontosIdRoute
   '/edicoes/$year': typeof EdicoesYearRoute
   '/jogadores/$id': typeof JogadoresIdRoute
@@ -205,6 +213,7 @@ export interface FileRoutesById {
   '/admin/jogadores': typeof AdminJogadoresRoute
   '/admin/midia': typeof AdminMidiaRoute
   '/admin/times': typeof AdminTimesRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/confrontos/$id': typeof ConfrontosIdRoute
   '/edicoes/$year': typeof EdicoesYearRoute
   '/jogadores/$id': typeof JogadoresIdRoute
@@ -231,6 +240,7 @@ export interface FileRouteTypes {
     | '/admin/jogadores'
     | '/admin/midia'
     | '/admin/times'
+    | '/auth/callback'
     | '/confrontos/$id'
     | '/edicoes/$year'
     | '/jogadores/$id'
@@ -254,6 +264,7 @@ export interface FileRouteTypes {
     | '/admin/jogadores'
     | '/admin/midia'
     | '/admin/times'
+    | '/auth/callback'
     | '/confrontos/$id'
     | '/edicoes/$year'
     | '/jogadores/$id'
@@ -278,6 +289,7 @@ export interface FileRouteTypes {
     | '/admin/jogadores'
     | '/admin/midia'
     | '/admin/times'
+    | '/auth/callback'
     | '/confrontos/$id'
     | '/edicoes/$year'
     | '/jogadores/$id'
@@ -296,6 +308,7 @@ export interface RootRouteChildren {
   EntrarRoute: typeof EntrarRoute
   GaleriaRoute: typeof GaleriaRoute
   HighlightsRoute: typeof HighlightsRoute
+  AuthCallbackRoute: typeof AuthCallbackRoute
   ConfrontosIdRoute: typeof ConfrontosIdRoute
   EdicoesYearRoute: typeof EdicoesYearRoute
   JogadoresIdRoute: typeof JogadoresIdRoute
@@ -413,6 +426,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ConfrontosIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth/callback': {
+      id: '/auth/callback'
+      path: '/auth/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/times': {
       id: '/admin/times'
       path: '/times'
@@ -498,6 +518,7 @@ const rootRouteChildren: RootRouteChildren = {
   EntrarRoute: EntrarRoute,
   GaleriaRoute: GaleriaRoute,
   HighlightsRoute: HighlightsRoute,
+  AuthCallbackRoute: AuthCallbackRoute,
   ConfrontosIdRoute: ConfrontosIdRoute,
   EdicoesYearRoute: EdicoesYearRoute,
   JogadoresIdRoute: JogadoresIdRoute,
