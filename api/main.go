@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"strings"
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
@@ -58,6 +59,21 @@ func main() {
 	gqlHandler := handler.NewDefaultServer(schema)
 
 	r := gin.Default()
+
+	// Aceita também requests vindas do reverse proxy do santos-games.com
+	// sob o path /universitarios/inter-unaerp/api/* — strippa o prefixo
+	// antes do roteamento.
+	const apiPrefix = "/universitarios/inter-unaerp/api"
+	r.Use(func(c *gin.Context) {
+		if strings.HasPrefix(c.Request.URL.Path, apiPrefix) {
+			c.Request.URL.Path = strings.TrimPrefix(c.Request.URL.Path, apiPrefix)
+			if c.Request.URL.Path == "" {
+				c.Request.URL.Path = "/"
+			}
+		}
+		c.Next()
+	})
+
 	r.Use(middleware.CORS(cfg.CORSOrigins))
 	r.Use(middleware.Auth(cfg.JWTSecret))
 
