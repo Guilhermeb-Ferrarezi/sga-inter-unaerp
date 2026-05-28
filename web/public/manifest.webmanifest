@@ -1,0 +1,26 @@
+{
+  "name": "Inter UnaERP",
+  "short_name": "Inter UnaERP",
+  "description": "Campeonato universitário UnaERP — registro 360° de times, jogadores, partidas e highlights.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#FAFBFD",
+  "theme_color": "#0A1A3D",
+  "orientation": "portrait-primary",
+  "lang": "pt-BR",
+  "categories": ["sports", "entertainment"],
+  "icons": [
+    {
+      "src": "/icon-512.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

@@ -1,7 +1,12 @@
+import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Section, SectionHeader } from "@/components/ui/section";
+import {
+  PhotoLightbox,
+  type LightboxPhoto,
+} from "@/components/gallery/PhotoLightbox";
 
 export const Route = createFileRoute("/galeria")({
   component: GalleryPage,
@@ -45,6 +50,15 @@ const photoData = [
 ];
 
 function GalleryPage() {
+  const [activeIdx, setActiveIdx] = useState<number | null>(null);
+
+  const lightboxPhotos: LightboxPhoto[] = photoData.map((p, i) => ({
+    id: `photo-${i}`,
+    gradient: photoVariants[i % photoVariants.length],
+    caption: p.cap,
+    info: p.info,
+  }));
+
   return (
     <>
       <PageHeader
@@ -111,16 +125,18 @@ function GalleryPage() {
 
         <div className="columns-2 md:columns-4 xl:columns-5 gap-3.5 mt-2">
           {photoData.map((p, i) => (
-            <motion.div
+            <motion.button
+              type="button"
+              onClick={() => setActiveIdx(i)}
               key={i}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.3, delay: i * 0.02 }}
-              className={`relative break-inside-avoid mb-3.5 group cursor-pointer bg-gradient-to-br ${
+              className={`relative break-inside-avoid mb-3.5 group cursor-pointer bg-gradient-to-br block w-full ${
                 photoVariants[i % photoVariants.length]
               } ${p.aspect} hover:translate-x-[-2px] hover:translate-y-[-2px] hover:[box-shadow:4px_4px_0_#0A1A3D] transition-all`}
             >
-              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-navy/85 to-transparent p-3.5 text-white opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-navy/85 to-transparent p-3.5 text-white opacity-0 group-hover:opacity-100 transition-opacity text-left">
                 <div className="font-display italic font-extrabold text-[13px] uppercase leading-tight">
                   {p.cap}
                 </div>
@@ -128,9 +144,16 @@ function GalleryPage() {
                   {p.info}
                 </div>
               </div>
-            </motion.div>
+            </motion.button>
           ))}
         </div>
+
+        <PhotoLightbox
+          photos={lightboxPhotos}
+          currentIndex={activeIdx}
+          onClose={() => setActiveIdx(null)}
+          onChange={setActiveIdx}
+        />
       </Section>
     </>
   );
