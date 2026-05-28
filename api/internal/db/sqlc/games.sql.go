@@ -8,7 +8,7 @@ package db
 import (
 	"context"
 
-	"github.com/jackc/pgx/v5/pgtype"
+	uuid "github.com/google/uuid"
 )
 
 const createGame = `-- name: CreateGame :one
@@ -100,10 +100,10 @@ RETURNING id, slug, name, cover_url, active, created_at
 `
 
 type UpdateGameParams struct {
-	ID       pgtype.UUID `json:"id"`
-	Name     string      `json:"name"`
-	CoverUrl *string     `json:"cover_url"`
-	Active   bool        `json:"active"`
+	ID       uuid.UUID `json:"id"`
+	Name     string    `json:"name"`
+	CoverUrl *string   `json:"cover_url"`
+	Active   bool      `json:"active"`
 }
 
 func (q *Queries) UpdateGame(ctx context.Context, arg UpdateGameParams) (Game, error) {

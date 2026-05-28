@@ -5,12 +5,13 @@
 package db
 
 import (
+	uuid "github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Edition struct {
-	ID        pgtype.UUID        `json:"id"`
-	GameID    pgtype.UUID        `json:"game_id"`
+	ID        uuid.UUID          `json:"id"`
+	GameID    uuid.UUID          `json:"game_id"`
 	Year      int32              `json:"year"`
 	Name      string             `json:"name"`
 	Status    string             `json:"status"`
@@ -20,9 +21,9 @@ type Edition struct {
 }
 
 type EditionTeam struct {
-	ID             pgtype.UUID        `json:"id"`
-	EditionID      pgtype.UUID        `json:"edition_id"`
-	TeamID         pgtype.UUID        `json:"team_id"`
+	ID             uuid.UUID          `json:"id"`
+	EditionID      uuid.UUID          `json:"edition_id"`
+	TeamID         uuid.UUID          `json:"team_id"`
 	Seed           *int32             `json:"seed"`
 	FinalPlacement *int32             `json:"final_placement"`
 	Wins           int32              `json:"wins"`
@@ -31,7 +32,7 @@ type EditionTeam struct {
 }
 
 type Game struct {
-	ID        pgtype.UUID        `json:"id"`
+	ID        uuid.UUID          `json:"id"`
 	Slug      string             `json:"slug"`
 	Name      string             `json:"name"`
 	CoverUrl  *string            `json:"cover_url"`
@@ -40,9 +41,9 @@ type Game struct {
 }
 
 type Highlight struct {
-	ID           pgtype.UUID        `json:"id"`
-	EditionID    pgtype.UUID        `json:"edition_id"`
-	MatchID      pgtype.UUID        `json:"match_id"`
+	ID           uuid.UUID          `json:"id"`
+	EditionID    uuid.UUID          `json:"edition_id"`
+	MatchID      *uuid.UUID         `json:"match_id"`
 	CfStreamID   string             `json:"cf_stream_id"`
 	Title        string             `json:"title"`
 	ThumbnailUrl *string            `json:"thumbnail_url"`
@@ -50,10 +51,10 @@ type Highlight struct {
 }
 
 type Match struct {
-	ID          pgtype.UUID        `json:"id"`
-	EditionID   pgtype.UUID        `json:"edition_id"`
-	TeamAID     pgtype.UUID        `json:"team_a_id"`
-	TeamBID     pgtype.UUID        `json:"team_b_id"`
+	ID          uuid.UUID          `json:"id"`
+	EditionID   uuid.UUID          `json:"edition_id"`
+	TeamAID     uuid.UUID          `json:"team_a_id"`
+	TeamBID     uuid.UUID          `json:"team_b_id"`
 	Round       string             `json:"round"`
 	ScheduledAt pgtype.Timestamptz `json:"scheduled_at"`
 	Status      string             `json:"status"`
@@ -61,9 +62,9 @@ type Match struct {
 }
 
 type MatchResult struct {
-	ID       pgtype.UUID        `json:"id"`
-	MatchID  pgtype.UUID        `json:"match_id"`
-	WinnerID pgtype.UUID        `json:"winner_id"`
+	ID       uuid.UUID          `json:"id"`
+	MatchID  uuid.UUID          `json:"match_id"`
+	WinnerID uuid.UUID          `json:"winner_id"`
 	Map      *string            `json:"map"`
 	ScoreA   int32              `json:"score_a"`
 	ScoreB   int32              `json:"score_b"`
@@ -71,9 +72,9 @@ type MatchResult struct {
 }
 
 type Medium struct {
-	ID        pgtype.UUID        `json:"id"`
-	EditionID pgtype.UUID        `json:"edition_id"`
-	MatchID   pgtype.UUID        `json:"match_id"`
+	ID        uuid.UUID          `json:"id"`
+	EditionID uuid.UUID          `json:"edition_id"`
+	MatchID   *uuid.UUID         `json:"match_id"`
 	R2Key     string             `json:"r2_key"`
 	Url       string             `json:"url"`
 	Caption   *string            `json:"caption"`
@@ -82,7 +83,7 @@ type Medium struct {
 }
 
 type Player struct {
-	ID        pgtype.UUID        `json:"id"`
+	ID        uuid.UUID          `json:"id"`
 	SgaUserID *int32             `json:"sga_user_id"`
 	Ign       string             `json:"ign"`
 	AvatarUrl *string            `json:"avatar_url"`
@@ -91,15 +92,15 @@ type Player struct {
 }
 
 type Roster struct {
-	ID            pgtype.UUID        `json:"id"`
-	EditionTeamID pgtype.UUID        `json:"edition_team_id"`
-	PlayerID      pgtype.UUID        `json:"player_id"`
+	ID            uuid.UUID          `json:"id"`
+	EditionTeamID uuid.UUID          `json:"edition_team_id"`
+	PlayerID      uuid.UUID          `json:"player_id"`
 	IsCaptain     bool               `json:"is_captain"`
 	CreatedAt     pgtype.Timestamptz `json:"created_at"`
 }
 
 type Team struct {
-	ID           pgtype.UUID        `json:"id"`
+	ID           uuid.UUID          `json:"id"`
 	Name         string             `json:"name"`
 	Slug         string             `json:"slug"`
 	LogoUrl      *string            `json:"logo_url"`

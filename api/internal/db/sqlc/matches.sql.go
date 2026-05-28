@@ -8,6 +8,7 @@ package db
 import (
 	"context"
 
+	uuid "github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -18,9 +19,9 @@ RETURNING id, edition_id, team_a_id, team_b_id, round, scheduled_at, status, cre
 `
 
 type CreateMatchParams struct {
-	EditionID   pgtype.UUID        `json:"edition_id"`
-	TeamAID     pgtype.UUID        `json:"team_a_id"`
-	TeamBID     pgtype.UUID        `json:"team_b_id"`
+	EditionID   uuid.UUID          `json:"edition_id"`
+	TeamAID     uuid.UUID          `json:"team_a_id"`
+	TeamBID     uuid.UUID          `json:"team_b_id"`
 	Round       string             `json:"round"`
 	ScheduledAt pgtype.Timestamptz `json:"scheduled_at"`
 }
@@ -55,22 +56,22 @@ WHERE m.id = $1
 `
 
 type GetMatchByIDRow struct {
-	ID          pgtype.UUID        `json:"id"`
-	EditionID   pgtype.UUID        `json:"edition_id"`
-	TeamAID     pgtype.UUID        `json:"team_a_id"`
-	TeamBID     pgtype.UUID        `json:"team_b_id"`
+	ID          uuid.UUID          `json:"id"`
+	EditionID   uuid.UUID          `json:"edition_id"`
+	TeamAID     uuid.UUID          `json:"team_a_id"`
+	TeamBID     uuid.UUID          `json:"team_b_id"`
 	Round       string             `json:"round"`
 	ScheduledAt pgtype.Timestamptz `json:"scheduled_at"`
 	Status      string             `json:"status"`
 	CreatedAt   pgtype.Timestamptz `json:"created_at"`
-	WinnerID    pgtype.UUID        `json:"winner_id"`
+	WinnerID    *uuid.UUID         `json:"winner_id"`
 	Map         *string            `json:"map"`
 	ScoreA      *int32             `json:"score_a"`
 	ScoreB      *int32             `json:"score_b"`
 	PlayedAt    pgtype.Timestamptz `json:"played_at"`
 }
 
-func (q *Queries) GetMatchByID(ctx context.Context, id pgtype.UUID) (GetMatchByIDRow, error) {
+func (q *Queries) GetMatchByID(ctx context.Context, id uuid.UUID) (GetMatchByIDRow, error) {
 	row := q.db.QueryRow(ctx, getMatchByID, id)
 	var i GetMatchByIDRow
 	err := row.Scan(
@@ -100,22 +101,22 @@ ORDER BY COALESCE(mr.played_at, m.scheduled_at) DESC
 `
 
 type ListMatchesByEditionRow struct {
-	ID          pgtype.UUID        `json:"id"`
-	EditionID   pgtype.UUID        `json:"edition_id"`
-	TeamAID     pgtype.UUID        `json:"team_a_id"`
-	TeamBID     pgtype.UUID        `json:"team_b_id"`
+	ID          uuid.UUID          `json:"id"`
+	EditionID   uuid.UUID          `json:"edition_id"`
+	TeamAID     uuid.UUID          `json:"team_a_id"`
+	TeamBID     uuid.UUID          `json:"team_b_id"`
 	Round       string             `json:"round"`
 	ScheduledAt pgtype.Timestamptz `json:"scheduled_at"`
 	Status      string             `json:"status"`
 	CreatedAt   pgtype.Timestamptz `json:"created_at"`
-	WinnerID    pgtype.UUID        `json:"winner_id"`
+	WinnerID    *uuid.UUID         `json:"winner_id"`
 	Map         *string            `json:"map"`
 	ScoreA      *int32             `json:"score_a"`
 	ScoreB      *int32             `json:"score_b"`
 	PlayedAt    pgtype.Timestamptz `json:"played_at"`
 }
 
-func (q *Queries) ListMatchesByEdition(ctx context.Context, editionID pgtype.UUID) ([]ListMatchesByEditionRow, error) {
+func (q *Queries) ListMatchesByEdition(ctx context.Context, editionID uuid.UUID) ([]ListMatchesByEditionRow, error) {
 	rows, err := q.db.Query(ctx, listMatchesByEdition, editionID)
 	if err != nil {
 		return nil, err
@@ -156,8 +157,8 @@ RETURNING id, match_id, winner_id, map, score_a, score_b, played_at
 `
 
 type RecordMatchResultParams struct {
-	MatchID  pgtype.UUID        `json:"match_id"`
-	WinnerID pgtype.UUID        `json:"winner_id"`
+	MatchID  uuid.UUID          `json:"match_id"`
+	WinnerID uuid.UUID          `json:"winner_id"`
 	Map      *string            `json:"map"`
 	ScoreA   int32              `json:"score_a"`
 	ScoreB   int32              `json:"score_b"`
@@ -191,8 +192,8 @@ UPDATE matches SET status = $2 WHERE id = $1 RETURNING id, edition_id, team_a_id
 `
 
 type UpdateMatchStatusParams struct {
-	ID     pgtype.UUID `json:"id"`
-	Status string      `json:"status"`
+	ID     uuid.UUID `json:"id"`
+	Status string    `json:"status"`
 }
 
 func (q *Queries) UpdateMatchStatus(ctx context.Context, arg UpdateMatchStatusParams) (Match, error) {

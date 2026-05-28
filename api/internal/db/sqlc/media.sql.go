@@ -8,6 +8,7 @@ package db
 import (
 	"context"
 
+	uuid "github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -18,8 +19,8 @@ RETURNING id, edition_id, match_id, cf_stream_id, title, thumbnail_url, publishe
 `
 
 type CreateHighlightParams struct {
-	EditionID    pgtype.UUID        `json:"edition_id"`
-	MatchID      pgtype.UUID        `json:"match_id"`
+	EditionID    uuid.UUID          `json:"edition_id"`
+	MatchID      *uuid.UUID         `json:"match_id"`
 	CfStreamID   string             `json:"cf_stream_id"`
 	Title        string             `json:"title"`
 	ThumbnailUrl *string            `json:"thumbnail_url"`
@@ -55,12 +56,12 @@ RETURNING id, edition_id, match_id, r2_key, url, caption, type, created_at
 `
 
 type CreateMediaParams struct {
-	EditionID pgtype.UUID `json:"edition_id"`
-	MatchID   pgtype.UUID `json:"match_id"`
-	R2Key     string      `json:"r2_key"`
-	Url       string      `json:"url"`
-	Caption   *string     `json:"caption"`
-	Type      string      `json:"type"`
+	EditionID uuid.UUID  `json:"edition_id"`
+	MatchID   *uuid.UUID `json:"match_id"`
+	R2Key     string     `json:"r2_key"`
+	Url       string     `json:"url"`
+	Caption   *string    `json:"caption"`
+	Type      string     `json:"type"`
 }
 
 func (q *Queries) CreateMedia(ctx context.Context, arg CreateMediaParams) (Medium, error) {
@@ -92,7 +93,7 @@ WHERE edition_id = $1
 ORDER BY published_at DESC
 `
 
-func (q *Queries) ListHighlightsByEdition(ctx context.Context, editionID pgtype.UUID) ([]Highlight, error) {
+func (q *Queries) ListHighlightsByEdition(ctx context.Context, editionID uuid.UUID) ([]Highlight, error) {
 	rows, err := q.db.Query(ctx, listHighlightsByEdition, editionID)
 	if err != nil {
 		return nil, err
@@ -127,8 +128,8 @@ ORDER BY created_at DESC
 `
 
 type ListMediaByEditionParams struct {
-	EditionID pgtype.UUID `json:"edition_id"`
-	Type      string      `json:"type"`
+	EditionID uuid.UUID `json:"edition_id"`
+	Type      string    `json:"type"`
 }
 
 func (q *Queries) ListMediaByEdition(ctx context.Context, arg ListMediaByEditionParams) ([]Medium, error) {

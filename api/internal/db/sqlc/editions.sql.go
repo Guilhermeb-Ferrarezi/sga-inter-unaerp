@@ -8,6 +8,7 @@ package db
 import (
 	"context"
 
+	uuid "github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -18,7 +19,7 @@ RETURNING id, game_id, year, name, status, started_at, ended_at, created_at
 `
 
 type CreateEditionParams struct {
-	GameID    pgtype.UUID        `json:"game_id"`
+	GameID    uuid.UUID          `json:"game_id"`
 	Year      int32              `json:"year"`
 	Name      string             `json:"name"`
 	Status    string             `json:"status"`
@@ -75,7 +76,7 @@ const getEditionByID = `-- name: GetEditionByID :one
 SELECT id, game_id, year, name, status, started_at, ended_at, created_at FROM editions WHERE id = $1
 `
 
-func (q *Queries) GetEditionByID(ctx context.Context, id pgtype.UUID) (Edition, error) {
+func (q *Queries) GetEditionByID(ctx context.Context, id uuid.UUID) (Edition, error) {
 	row := q.db.QueryRow(ctx, getEditionByID, id)
 	var i Edition
 	err := row.Scan(
@@ -95,7 +96,7 @@ const listEditionsByGame = `-- name: ListEditionsByGame :many
 SELECT id, game_id, year, name, status, started_at, ended_at, created_at FROM editions WHERE game_id = $1 ORDER BY year DESC
 `
 
-func (q *Queries) ListEditionsByGame(ctx context.Context, gameID pgtype.UUID) ([]Edition, error) {
+func (q *Queries) ListEditionsByGame(ctx context.Context, gameID uuid.UUID) ([]Edition, error) {
 	rows, err := q.db.Query(ctx, listEditionsByGame, gameID)
 	if err != nil {
 		return nil, err
@@ -129,7 +130,7 @@ UPDATE editions SET status = $2, ended_at = $3 WHERE id = $1 RETURNING id, game_
 `
 
 type UpdateEditionStatusParams struct {
-	ID      pgtype.UUID        `json:"id"`
+	ID      uuid.UUID          `json:"id"`
 	Status  string             `json:"status"`
 	EndedAt pgtype.Timestamptz `json:"ended_at"`
 }

@@ -8,6 +8,7 @@ package db
 import (
 	"context"
 
+	uuid "github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -18,9 +19,9 @@ RETURNING id, edition_team_id, player_id, is_captain, created_at
 `
 
 type AddPlayerToRosterParams struct {
-	EditionTeamID pgtype.UUID `json:"edition_team_id"`
-	PlayerID      pgtype.UUID `json:"player_id"`
-	IsCaptain     bool        `json:"is_captain"`
+	EditionTeamID uuid.UUID `json:"edition_team_id"`
+	PlayerID      uuid.UUID `json:"player_id"`
+	IsCaptain     bool      `json:"is_captain"`
 }
 
 func (q *Queries) AddPlayerToRoster(ctx context.Context, arg AddPlayerToRosterParams) (Roster, error) {
@@ -72,7 +73,7 @@ const getPlayerByID = `-- name: GetPlayerByID :one
 SELECT id, sga_user_id, ign, avatar_url, role, created_at FROM players WHERE id = $1
 `
 
-func (q *Queries) GetPlayerByID(ctx context.Context, id pgtype.UUID) (Player, error) {
+func (q *Queries) GetPlayerByID(ctx context.Context, id uuid.UUID) (Player, error) {
 	row := q.db.QueryRow(ctx, getPlayerByID, id)
 	var i Player
 	err := row.Scan(
@@ -95,17 +96,17 @@ ORDER BY r.is_captain DESC, p.ign
 `
 
 type ListPlayersByEditionTeamRow struct {
-	ID            pgtype.UUID        `json:"id"`
+	ID            uuid.UUID          `json:"id"`
 	SgaUserID     *int32             `json:"sga_user_id"`
 	Ign           string             `json:"ign"`
 	AvatarUrl     *string            `json:"avatar_url"`
 	Role          *string            `json:"role"`
 	CreatedAt     pgtype.Timestamptz `json:"created_at"`
 	IsCaptain     bool               `json:"is_captain"`
-	EditionTeamID pgtype.UUID        `json:"edition_team_id"`
+	EditionTeamID uuid.UUID          `json:"edition_team_id"`
 }
 
-func (q *Queries) ListPlayersByEditionTeam(ctx context.Context, editionTeamID pgtype.UUID) ([]ListPlayersByEditionTeamRow, error) {
+func (q *Queries) ListPlayersByEditionTeam(ctx context.Context, editionTeamID uuid.UUID) ([]ListPlayersByEditionTeamRow, error) {
 	rows, err := q.db.Query(ctx, listPlayersByEditionTeam, editionTeamID)
 	if err != nil {
 		return nil, err
@@ -139,10 +140,10 @@ UPDATE players SET ign = $2, avatar_url = $3, role = $4 WHERE id = $1 RETURNING 
 `
 
 type UpdatePlayerParams struct {
-	ID        pgtype.UUID `json:"id"`
-	Ign       string      `json:"ign"`
-	AvatarUrl *string     `json:"avatar_url"`
-	Role      *string     `json:"role"`
+	ID        uuid.UUID `json:"id"`
+	Ign       string    `json:"ign"`
+	AvatarUrl *string   `json:"avatar_url"`
+	Role      *string   `json:"role"`
 }
 
 func (q *Queries) UpdatePlayer(ctx context.Context, arg UpdatePlayerParams) (Player, error) {
