@@ -2,11 +2,8 @@
 FROM node:22-alpine AS build
 WORKDIR /app
 
-# Copia tudo (sem bun.lock — vamos gerar package-lock.json com npm)
-COPY package.json ./
-
-# Instala via npm (mais previsível em containers do que bun)
-RUN npm install --no-audit --no-fund --legacy-peer-deps
+COPY package.json package-lock.json ./
+RUN npm ci --no-audit --no-fund --legacy-peer-deps
 
 COPY . .
 
