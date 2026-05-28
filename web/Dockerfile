@@ -1,9 +1,12 @@
 # ──────────── Build stage ────────────
-FROM oven/bun:1.3 AS build
+FROM node:22-alpine AS build
 WORKDIR /app
 
+# Instala bun via npm (funciona consistentemente)
+RUN npm install -g bun@1.3
+
 COPY package.json bun.lock ./
-RUN bun install --frozen-lockfile
+RUN bun install
 
 COPY . .
 
