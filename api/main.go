@@ -5,12 +5,15 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/sg/unaerp-api/internal/config"
+	"github.com/sg/unaerp-api/internal/middleware"
 )
 
 func main() {
 	cfg := config.Load()
 
 	r := gin.Default()
+	r.Use(middleware.CORS(cfg.CORSOrigins))
+	r.Use(middleware.Auth(cfg.JWTSecret))
 
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
