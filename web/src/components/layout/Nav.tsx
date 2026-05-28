@@ -49,9 +49,12 @@ export function Nav() {
         <span className="font-display italic font-extrabold text-[10.5px] uppercase tracking-[0.1em] text-teal border-[1.5px] border-teal px-2.5 py-1">
           Valorant · 2025
         </span>
-        <button className="bg-blue text-white px-5 py-2 text-[11.5px] font-extrabold uppercase tracking-[0.08em] shadow-brutal-sm hover:translate-x-[-1px] hover:translate-y-[-1px] hover:[box-shadow:4px_4px_0_#0A1A3D] transition-all">
+        <Link
+          to="/entrar"
+          className="bg-blue text-white px-5 py-2 text-[11.5px] font-extrabold uppercase tracking-[0.08em] shadow-brutal-sm hover:translate-x-[-1px] hover:translate-y-[-1px] hover:[box-shadow:4px_4px_0_#0A1A3D] transition-all"
+        >
           Entrar com SGA
-        </button>
+        </Link>
       </div>
     </nav>
   );

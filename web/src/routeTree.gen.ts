@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as HighlightsRouteImport } from './routes/highlights'
 import { Route as GaleriaRouteImport } from './routes/galeria'
+import { Route as EntrarRouteImport } from './routes/entrar'
 import { Route as ClassificacaoRouteImport } from './routes/classificacao'
 import { Route as AdminRouteRouteImport } from './routes/admin/route'
 import { Route as IndexRouteImport } from './routes/index'
@@ -39,6 +40,11 @@ const HighlightsRoute = HighlightsRouteImport.update({
 const GaleriaRoute = GaleriaRouteImport.update({
   id: '/galeria',
   path: '/galeria',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EntrarRoute = EntrarRouteImport.update({
+  id: '/entrar',
+  path: '/entrar',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ClassificacaoRoute = ClassificacaoRouteImport.update({
@@ -141,6 +147,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteRouteWithChildren
   '/classificacao': typeof ClassificacaoRoute
+  '/entrar': typeof EntrarRoute
   '/galeria': typeof GaleriaRoute
   '/highlights': typeof HighlightsRoute
   '/admin/confrontos': typeof AdminConfrontosRoute
@@ -163,6 +170,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/classificacao': typeof ClassificacaoRoute
+  '/entrar': typeof EntrarRoute
   '/galeria': typeof GaleriaRoute
   '/highlights': typeof HighlightsRoute
   '/admin/confrontos': typeof AdminConfrontosRoute
@@ -187,6 +195,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteRouteWithChildren
   '/classificacao': typeof ClassificacaoRoute
+  '/entrar': typeof EntrarRoute
   '/galeria': typeof GaleriaRoute
   '/highlights': typeof HighlightsRoute
   '/admin/confrontos': typeof AdminConfrontosRoute
@@ -212,6 +221,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/classificacao'
+    | '/entrar'
     | '/galeria'
     | '/highlights'
     | '/admin/confrontos'
@@ -234,6 +244,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/classificacao'
+    | '/entrar'
     | '/galeria'
     | '/highlights'
     | '/admin/confrontos'
@@ -257,6 +268,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/classificacao'
+    | '/entrar'
     | '/galeria'
     | '/highlights'
     | '/admin/confrontos'
@@ -281,6 +293,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRouteRoute: typeof AdminRouteRouteWithChildren
   ClassificacaoRoute: typeof ClassificacaoRoute
+  EntrarRoute: typeof EntrarRoute
   GaleriaRoute: typeof GaleriaRoute
   HighlightsRoute: typeof HighlightsRoute
   ConfrontosIdRoute: typeof ConfrontosIdRoute
@@ -307,6 +320,13 @@ declare module '@tanstack/react-router' {
       path: '/galeria'
       fullPath: '/galeria'
       preLoaderRoute: typeof GaleriaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/entrar': {
+      id: '/entrar'
+      path: '/entrar'
+      fullPath: '/entrar'
+      preLoaderRoute: typeof EntrarRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/classificacao': {
@@ -475,6 +495,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRouteRoute: AdminRouteRouteWithChildren,
   ClassificacaoRoute: ClassificacaoRoute,
+  EntrarRoute: EntrarRoute,
   GaleriaRoute: GaleriaRoute,
   HighlightsRoute: HighlightsRoute,
   ConfrontosIdRoute: ConfrontosIdRoute,
