@@ -12,9 +12,9 @@ import {
   upcomingMatches,
   highlights,
   playersByKD,
-  teams,
 } from "@/data/mock";
 import { PlayerPodium } from "@/components/cards/PlayerPodium";
+import { useEditionTeams } from "@/lib/use-edition";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
@@ -26,6 +26,9 @@ function HomePage() {
   const featuredLive = live[0];
   const topPlayers = playersByKD().slice(0, 3);
   const recentHl = highlights.slice(0, 4);
+
+  // 🌐 GraphQL — times reais da edição ativa (fallback pro mock se API offline)
+  const { teams } = useEditionTeams("valorant");
 
   return (
     <>

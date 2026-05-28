@@ -4,7 +4,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Section } from "@/components/ui/section";
 import { StandingsTable } from "@/components/cards/StandingsTable";
 import { TeamLogo } from "@/components/ui/team-logo";
-import { teams } from "@/data/mock";
+import { useEditionTeams } from "@/lib/use-edition";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/classificacao")({
@@ -12,6 +12,9 @@ export const Route = createFileRoute("/classificacao")({
 });
 
 function StandingsPage() {
+  // 🌐 GraphQL — times reais da edição ativa (fallback automático pro mock)
+  const { teams, usingFallback } = useEditionTeams("valorant");
+
   const sorted = [...teams].sort(
     (a, b) => b.points - a.points || b.pointsDiff - a.pointsDiff
   );
@@ -36,6 +39,12 @@ function StandingsPage() {
       />
 
       <Section decoNum="CLS">
+        {!usingFallback && (
+          <div className="inline-flex items-center gap-2 bg-teal/10 border border-teal text-teal px-3 py-1.5 font-display italic font-extrabold uppercase text-[10.5px] tracking-[0.1em] mb-5">
+            <span className="w-2 h-2 bg-teal rounded-full animate-pulse-dot" />
+            Dados ao vivo · PostgreSQL via GraphQL
+          </div>
+        )}
         <div className="grid lg:grid-cols-[1fr_360px] gap-7">
           <StandingsTable teams={sorted} qualifyCutoff={4} />
 
