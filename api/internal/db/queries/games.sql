@@ -14,3 +14,6 @@ UPDATE games
 SET name = $2, cover_url = $3, active = $4
 WHERE id = $1
 RETURNING *;
+
+-- name: GetGameByID :one
+SELECT * FROM games WHERE id = $1;

@@ -43,6 +43,24 @@ func (q *Queries) CreateGame(ctx context.Context, arg CreateGameParams) (Game, e
 	return i, err
 }
 
+const getGameByID = `-- name: GetGameByID :one
+SELECT id, slug, name, cover_url, active, created_at FROM games WHERE id = $1
+`
+
+func (q *Queries) GetGameByID(ctx context.Context, id uuid.UUID) (Game, error) {
+	row := q.db.QueryRow(ctx, getGameByID, id)
+	var i Game
+	err := row.Scan(
+		&i.ID,
+		&i.Slug,
+		&i.Name,
+		&i.CoverUrl,
+		&i.Active,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const getGameBySlug = `-- name: GetGameBySlug :one
 SELECT id, slug, name, cover_url, active, created_at FROM games WHERE slug = $1
 `

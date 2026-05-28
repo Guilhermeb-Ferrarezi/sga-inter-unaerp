@@ -68,15 +68,15 @@ func (r *mutationResolver) CreateEdition(ctx context.Context, gameID uuid.UUID, 
 		return nil, err
 	}
 
-	// No GetGameByID sqlc query — build minimal game reference with only the ID.
-	gameModel := &model.Game{ID: e.GameID}
+	game, err := r.DB.GetGameByID(ctx, e.GameID)
+	if err != nil {
+		return nil, err
+	}
 
-	return editionToModel(e, gameModel), nil
+	return editionToModel(e, gameToModel(game)), nil
 }
 
 // UpdateEditionStatus is the resolver for the updateEditionStatus field.
-// Cache note: active_edition:{gameSlug} will expire via TTL (30s) — we don't
-// have GetGameByID to look up the slug efficiently here, so we rely on TTL.
 func (r *mutationResolver) UpdateEditionStatus(ctx context.Context, id uuid.UUID, status string) (*model.Edition, error) {
 	if err := requireAuth(ctx); err != nil {
 		return nil, err
@@ -97,8 +97,14 @@ func (r *mutationResolver) UpdateEditionStatus(ctx context.Context, id uuid.UUID
 		return nil, err
 	}
 
-	gameModel := &model.Game{ID: e.GameID}
-	return editionToModel(e, gameModel), nil
+	game, err := r.DB.GetGameByID(ctx, e.GameID)
+	if err != nil {
+		return nil, err
+	}
+	if r.Redis != nil {
+		_ = r.Redis.Del(ctx, fmt.Sprintf("active_edition:%s", game.Slug))
+	}
+	return editionToModel(e, gameToModel(game)), nil
 }
 
 // CreateTeam is the resolver for the createTeam field.
@@ -166,7 +172,11 @@ func (r *mutationResolver) AddTeamToEdition(ctx context.Context, editionID uuid.
 	if err != nil {
 		return nil, err
 	}
-	editionModel := editionToModel(e, &model.Game{ID: e.GameID})
+	game, err := r.DB.GetGameByID(ctx, e.GameID)
+	if err != nil {
+		return nil, err
+	}
+	editionModel := editionToModel(e, gameToModel(game))
 
 	// No GetTeamByID sqlc query — build stub Team with ID only.
 	teamModel := &model.Team{ID: et.TeamID}
@@ -265,7 +275,11 @@ func (r *mutationResolver) CreateMatch(ctx context.Context, editionID uuid.UUID,
 	if err != nil {
 		return nil, err
 	}
-	editionModel := editionToModel(e, &model.Game{ID: e.GameID})
+	game, err := r.DB.GetGameByID(ctx, e.GameID)
+	if err != nil {
+		return nil, err
+	}
+	editionModel := editionToModel(e, gameToModel(game))
 
 	// Stub edition teams with IDs only — full eager load not needed here
 	teamA := &model.EditionTeam{ID: teamAId}
@@ -421,7 +435,11 @@ func (r *mutationResolver) ConfirmMediaUpload(ctx context.Context, editionID uui
 	if err != nil {
 		return nil, err
 	}
-	editionModel := editionToModel(e, &model.Game{ID: e.GameID})
+	game, err := r.DB.GetGameByID(ctx, e.GameID)
+	if err != nil {
+		return nil, err
+	}
+	editionModel := editionToModel(e, gameToModel(game))
 	return mediaToModel(row, editionModel), nil
 }
 
@@ -447,7 +465,11 @@ func (r *mutationResolver) CreateHighlight(ctx context.Context, editionID uuid.U
 	if err != nil {
 		return nil, err
 	}
-	editionModel := editionToModel(e, &model.Game{ID: e.GameID})
+	game, err := r.DB.GetGameByID(ctx, e.GameID)
+	if err != nil {
+		return nil, err
+	}
+	editionModel := editionToModel(e, gameToModel(game))
 
 	return highlightToModel(h, editionModel), nil
 }
@@ -536,10 +558,12 @@ func (r *queryResolver) Edition(ctx context.Context, id uuid.UUID) (*model.Editi
 		return nil, err
 	}
 
-	// No GetGameByID sqlc query exists — build a minimal game reference with only the ID.
-	gameModel := &model.Game{ID: e.GameID}
+	game, err := r.DB.GetGameByID(ctx, e.GameID)
+	if err != nil {
+		return nil, err
+	}
 
-	return editionToModel(e, gameModel), nil
+	return editionToModel(e, gameToModel(game)), nil
 }
 
 // Editions is the resolver for the editions field.
@@ -570,7 +594,11 @@ func (r *queryResolver) Teams(ctx context.Context, editionID uuid.UUID) ([]*mode
 	if err != nil {
 		return nil, err
 	}
-	editionModel := editionToModel(e, &model.Game{ID: e.GameID})
+	game, err := r.DB.GetGameByID(ctx, e.GameID)
+	if err != nil {
+		return nil, err
+	}
+	editionModel := editionToModel(e, gameToModel(game))
 
 	rows, err := r.DB.ListTeamsByEdition(ctx, editionID)
 	if err != nil {
@@ -614,7 +642,11 @@ func (r *queryResolver) Standings(ctx context.Context, editionID uuid.UUID) ([]*
 	if err != nil {
 		return nil, err
 	}
-	editionModel := editionToModel(e, &model.Game{ID: e.GameID})
+	game, err := r.DB.GetGameByID(ctx, e.GameID)
+	if err != nil {
+		return nil, err
+	}
+	editionModel := editionToModel(e, gameToModel(game))
 
 	rows, err := r.DB.ListTeamsByEdition(ctx, editionID)
 	if err != nil {
@@ -648,20 +680,18 @@ func (r *queryResolver) Matches(ctx context.Context, editionID uuid.UUID, round 
 	if err != nil {
 		return nil, err
 	}
-	editionModel := editionToModel(e, &model.Game{ID: e.GameID})
+	game, err := r.DB.GetGameByID(ctx, e.GameID)
+	if err != nil {
+		return nil, err
+	}
+	editionModel := editionToModel(e, gameToModel(game))
 
 	// pre-fetch teams for this edition to resolve teamA/teamB
 	teamRows, err := r.DB.ListTeamsByEdition(ctx, editionID)
 	if err != nil {
 		return nil, err
 	}
-	// build map: edition_team_id -> *model.EditionTeam
-	etByTeamID := make(map[uuid.UUID]*model.EditionTeam, len(teamRows))
-	for _, tr := range teamRows {
-		et := editionTeamFromRow(tr, editionModel)
-		etByTeamID[tr.ID] = et // tr.ID is team.id, not edition_team_id
-	}
-	// also map by edition_team_id
+	// build map keyed by edition_team_id (matches.team_a_id/team_b_id are FKs to edition_teams.id)
 	etByEditionTeamID := make(map[uuid.UUID]*model.EditionTeam, len(teamRows))
 	for _, tr := range teamRows {
 		et := editionTeamFromRow(tr, editionModel)
@@ -679,13 +709,12 @@ func (r *queryResolver) Matches(ctx context.Context, editionID uuid.UUID, round 
 			continue
 		}
 
-		// find teamA and teamB edition_teams by team id
-		teamA := findEditionTeamByTeamID(etByTeamID, row.TeamAID)
-		teamB := findEditionTeamByTeamID(etByTeamID, row.TeamBID)
+		teamA := etByEditionTeamID[row.TeamAID]
+		teamB := etByEditionTeamID[row.TeamBID]
 
 		var matchResult *model.MatchResult
 		if row.WinnerID != nil {
-			winner := findEditionTeamByTeamID(etByTeamID, *row.WinnerID)
+			winner := etByEditionTeamID[*row.WinnerID]
 			matchResult = matchResultFromListRow(row, winner)
 		}
 
@@ -705,25 +734,29 @@ func (r *queryResolver) Match(ctx context.Context, id uuid.UUID) (*model.Match, 
 	if err != nil {
 		return nil, err
 	}
-	editionModel := editionToModel(e, &model.Game{ID: e.GameID})
+	game, err := r.DB.GetGameByID(ctx, e.GameID)
+	if err != nil {
+		return nil, err
+	}
+	editionModel := editionToModel(e, gameToModel(game))
 
-	// pre-fetch teams
+	// pre-fetch teams; key by edition_team_id (matches.team_a_id/team_b_id are FKs to edition_teams.id)
 	teamRows, err := r.DB.ListTeamsByEdition(ctx, row.EditionID)
 	if err != nil {
 		return nil, err
 	}
-	etByTeamID := make(map[uuid.UUID]*model.EditionTeam, len(teamRows))
+	etByEditionTeamID := make(map[uuid.UUID]*model.EditionTeam, len(teamRows))
 	for _, tr := range teamRows {
 		et := editionTeamFromRow(tr, editionModel)
-		etByTeamID[tr.ID] = et
+		etByEditionTeamID[tr.EditionTeamID] = et
 	}
 
-	teamA := findEditionTeamByTeamID(etByTeamID, row.TeamAID)
-	teamB := findEditionTeamByTeamID(etByTeamID, row.TeamBID)
+	teamA := etByEditionTeamID[row.TeamAID]
+	teamB := etByEditionTeamID[row.TeamBID]
 
 	var matchResult *model.MatchResult
 	if row.WinnerID != nil {
-		winner := findEditionTeamByTeamID(etByTeamID, *row.WinnerID)
+		winner := etByEditionTeamID[*row.WinnerID]
 		matchResult = matchResultFromGetRow(row, winner)
 	}
 
@@ -745,7 +778,11 @@ func (r *queryResolver) Highlights(ctx context.Context, editionID uuid.UUID) ([]
 	if err != nil {
 		return nil, err
 	}
-	editionModel := editionToModel(e, &model.Game{ID: e.GameID})
+	game, err := r.DB.GetGameByID(ctx, e.GameID)
+	if err != nil {
+		return nil, err
+	}
+	editionModel := editionToModel(e, gameToModel(game))
 
 	rows, err := r.DB.ListHighlightsByEdition(ctx, editionID)
 	if err != nil {
@@ -764,7 +801,11 @@ func (r *queryResolver) Gallery(ctx context.Context, editionID uuid.UUID) ([]*mo
 	if err != nil {
 		return nil, err
 	}
-	editionModel := editionToModel(e, &model.Game{ID: e.GameID})
+	game, err := r.DB.GetGameByID(ctx, e.GameID)
+	if err != nil {
+		return nil, err
+	}
+	editionModel := editionToModel(e, gameToModel(game))
 
 	rows, err := r.DB.ListMediaByEdition(ctx, db.ListMediaByEditionParams{
 		EditionID: editionID,
@@ -789,11 +830,3 @@ func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
 
-// findEditionTeamByTeamID looks up an EditionTeam in the map by the underlying team's ID.
-// The map key is team.id (not edition_team.id).
-func findEditionTeamByTeamID(m map[uuid.UUID]*model.EditionTeam, teamID uuid.UUID) *model.EditionTeam {
-	if et, ok := m[teamID]; ok {
-		return et
-	}
-	return nil
-}
