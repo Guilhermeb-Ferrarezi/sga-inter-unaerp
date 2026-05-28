@@ -55,13 +55,16 @@ func main() {
 	r.POST("/graphql", func(c *gin.Context) {
 		gqlHandler.ServeHTTP(c.Writer, c.Request)
 	})
-	r.GET("/graphql", func(c *gin.Context) {
-		gqlHandler.ServeHTTP(c.Writer, c.Request)
-	})
 
-	r.GET("/playground", func(c *gin.Context) {
-		playground.Handler("Inter UnaERP", "/graphql").ServeHTTP(c.Writer, c.Request)
-	})
+	if cfg.IsDev() {
+		r.GET("/graphql", func(c *gin.Context) {
+			gqlHandler.ServeHTTP(c.Writer, c.Request)
+		})
+		r.GET("/playground", func(c *gin.Context) {
+			playground.Handler("Inter UnaERP", "/graphql").ServeHTTP(c.Writer, c.Request)
+		})
+		log.Printf("Playground habilitado em /playground (APP_ENV=%s)", cfg.Env)
+	}
 
 	log.Printf("API rodando na porta %s", cfg.Port)
 	if err := r.Run(":" + cfg.Port); err != nil {

@@ -14,6 +14,7 @@ type Config struct {
 	RedisURL    string
 	JWTSecret   string
 	CORSOrigins []string
+	Env         string
 
 	CFAccountID    string
 	CFR2AccessKey  string
@@ -32,6 +33,7 @@ func Load() *Config {
 		RedisURL:    getEnv("REDIS_URL", "redis://localhost:6379"),
 		JWTSecret:   mustEnv("JWT_SECRET"),
 		CORSOrigins: strings.Split(getEnv("CORS_ORIGINS", "http://localhost:5173"), ","),
+		Env:         getEnv("APP_ENV", "development"),
 
 		CFAccountID:    mustEnv("CF_ACCOUNT_ID"),
 		CFR2AccessKey:  mustEnv("CF_R2_ACCESS_KEY"),
@@ -56,4 +58,8 @@ func mustEnv(key string) string {
 		log.Fatalf("variável de ambiente obrigatória não definida: %s", key)
 	}
 	return v
+}
+
+func (c *Config) IsDev() bool {
+	return c.Env != "production"
 }
