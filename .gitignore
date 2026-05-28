@@ -15,7 +15,7 @@ api/api
 
 # Node / Bun (future web/)
 node_modules/
-web/dist/
+# web/dist/ committed for direct nginx serve in production
 web/.cache/
 bun.lock.bak
 

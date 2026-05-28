@@ -1,27 +1,10 @@
-# ──────────── Build stage ────────────
-FROM node:22-alpine AS build
-WORKDIR /app
-
-COPY package.json package-lock.json ./
-RUN npm ci --no-audit --no-fund --legacy-peer-deps
-
-COPY . .
-
-ARG VITE_GRAPHQL_URL
-ARG VITE_SGA_AUTH_URL
-ARG VITE_CF_STREAM_BASE
-ENV VITE_GRAPHQL_URL=${VITE_GRAPHQL_URL}
-ENV VITE_SGA_AUTH_URL=${VITE_SGA_AUTH_URL}
-ENV VITE_CF_STREAM_BASE=${VITE_CF_STREAM_BASE}
-
-RUN npm run build
-
-# ──────────── Runtime stage ────────────
+# Static-only build — dist/ é pré-buildado e committado
+# Para rebuild com novos env vars, rebuilde local e commit dist/
 FROM nginx:1.27-alpine
 WORKDIR /usr/share/nginx/html
 
 RUN rm -rf ./*
-COPY --from=build /app/dist .
+COPY dist/ ./
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
