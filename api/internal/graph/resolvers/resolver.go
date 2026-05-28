@@ -5,6 +5,7 @@ import (
 	"github.com/redis/go-redis/v9"
 	"github.com/sg/unaerp-api/internal/config"
 	sqlcdb "github.com/sg/unaerp-api/internal/db/sqlc"
+	"github.com/sg/unaerp-api/internal/storage"
 )
 
 // This file will not be regenerated automatically.
@@ -16,4 +17,5 @@ type Resolver struct {
 	Pool   *pgxpool.Pool
 	Redis  *redis.Client
 	Config *config.Config
+	R2     *storage.R2Client
 }

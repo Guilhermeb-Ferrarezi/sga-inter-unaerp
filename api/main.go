@@ -15,6 +15,7 @@ import (
 	"github.com/sg/unaerp-api/internal/graph/generated"
 	"github.com/sg/unaerp-api/internal/graph/resolvers"
 	"github.com/sg/unaerp-api/internal/middleware"
+	"github.com/sg/unaerp-api/internal/storage"
 )
 
 func main() {
@@ -34,11 +35,20 @@ func main() {
 
 	queries := sqlcdb.New(pool)
 
+	r2Client := storage.NewR2(
+		cfg.CFAccountID,
+		cfg.CFR2AccessKey,
+		cfg.CFR2SecretKey,
+		cfg.CFR2BucketName,
+		cfg.CFR2PublicURL,
+	)
+
 	resolver := &resolvers.Resolver{
 		DB:     queries,
 		Pool:   pool,
 		Redis:  redisClient.Underlying(),
 		Config: cfg,
+		R2:     r2Client,
 	}
 
 	schema := generated.NewExecutableSchema(generated.Config{Resolvers: resolver})

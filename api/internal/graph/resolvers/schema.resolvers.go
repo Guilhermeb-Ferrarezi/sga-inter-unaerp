@@ -376,12 +376,52 @@ func (r *mutationResolver) RecordResult(ctx context.Context, matchID uuid.UUID, 
 
 // UploadMediaPresignedURL is the resolver for the uploadMediaPresignedUrl field.
 func (r *mutationResolver) UploadMediaPresignedURL(ctx context.Context, editionID uuid.UUID, matchID *uuid.UUID, fileType string, mediaType string) (*model.PresignedUpload, error) {
-	return nil, errors.New("não implementado — task 9")
+	if err := requireAuth(ctx); err != nil {
+		return nil, err
+	}
+
+	key := fmt.Sprintf("unaerp/%s/%s/%s.%s",
+		editionID,
+		mediaType,
+		uuid.New().String(),
+		fileType,
+	)
+
+	contentType := "image/" + fileType
+	uploadURL, err := r.R2.PresignUpload(ctx, key, contentType)
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.PresignedUpload{
+		UploadURL: uploadURL,
+		PublicURL: r.R2.PublicURL(key),
+		R2Key:     key,
+	}, nil
 }
 
 // ConfirmMediaUpload is the resolver for the confirmMediaUpload field.
 func (r *mutationResolver) ConfirmMediaUpload(ctx context.Context, editionID uuid.UUID, matchID *uuid.UUID, r2Key string, url string, caption *string, mediaType string) (*model.Media, error) {
-	return nil, errors.New("não implementado — task 9")
+	if err := requireAuth(ctx); err != nil {
+		return nil, err
+	}
+	row, err := r.DB.CreateMedia(ctx, db.CreateMediaParams{
+		EditionID: editionID,
+		MatchID:   matchID,
+		R2Key:     r2Key,
+		Url:       url,
+		Caption:   caption,
+		Type:      mediaType,
+	})
+	if err != nil {
+		return nil, err
+	}
+	e, err := r.DB.GetEditionByID(ctx, editionID)
+	if err != nil {
+		return nil, err
+	}
+	editionModel := editionToModel(e, &model.Game{ID: e.GameID})
+	return mediaToModel(row, editionModel), nil
 }
 
 // CreateHighlight is the resolver for the createHighlight field.
