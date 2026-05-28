@@ -3,8 +3,8 @@
 @tailwind utilities;
 
 @layer base {
+  /* LIGHT (default) */
   :root {
-    /* tokens InterUnaERP */
     --bg: #fafbfd;
     --surface-1: #ffffff;
     --surface-2: #ffffff;
@@ -15,6 +15,30 @@
     --fg: #0a1a3d;
     --fg-soft: #4a5878;
     --fg-mute: #8493ae;
+
+    --shadow-color: #0a1a3d;
+    --nav-bg: rgba(250, 251, 253, 0.9);
+
+    color-scheme: light;
+  }
+
+  /* DARK */
+  .dark {
+    --bg: #060a1a;
+    --surface-1: #0b1428;
+    --surface-2: #111c36;
+    --surface-3: #182645;
+    --border: rgba(255, 255, 255, 0.08);
+    --border-strong: rgba(255, 255, 255, 0.18);
+
+    --fg: #e8ecf5;
+    --fg-soft: #9ca9c4;
+    --fg-mute: #5b6890;
+
+    --shadow-color: #060a1a;
+    --nav-bg: rgba(6, 10, 26, 0.9);
+
+    color-scheme: dark;
   }
 
   * {
@@ -28,16 +52,17 @@
 
   body {
     overflow-x: hidden;
+    transition: background-color 0.2s, color 0.2s;
   }
 }
 
 /* Brutal shadow helpers */
 @layer utilities {
   .shadow-brutal {
-    box-shadow: 5px 5px 0 var(--navy);
+    box-shadow: 5px 5px 0 var(--shadow-color);
   }
   .shadow-brutal-lg {
-    box-shadow: 8px 8px 0 var(--navy);
+    box-shadow: 8px 8px 0 var(--shadow-color);
   }
   .shadow-brutal-lime {
     box-shadow: 5px 5px 0 #a4cd3a;
@@ -49,7 +74,7 @@
     box-shadow: 5px 5px 0 #0073b7;
   }
   .shadow-brutal-sm {
-    box-shadow: 3px 3px 0 var(--navy);
+    box-shadow: 3px 3px 0 var(--shadow-color);
   }
 
   /* Tactical corner brackets */
@@ -75,5 +100,19 @@
     height: 24px;
     border-bottom: 3px solid #a4cd3a;
     border-left: 3px solid #a4cd3a;
+  }
+
+  /* dark-mode local overrides para componentes que usam bg-white literal */
+  .dark .bg-white {
+    background-color: var(--surface-2);
+  }
+  .dark .border-navy {
+    border-color: var(--border-strong);
+  }
+  .dark .bg-navy {
+    background-color: var(--surface-3);
+  }
+  .dark .text-navy {
+    color: var(--fg);
   }
 }

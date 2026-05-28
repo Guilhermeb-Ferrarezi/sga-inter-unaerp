@@ -3,6 +3,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import { SignOut, ShieldCheck, List, X } from "@phosphor-icons/react";
 import { Brand } from "./Brand";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
 
@@ -42,7 +43,10 @@ export function Nav() {
 
   return (
     <>
-      <nav className="sticky top-0 z-50 bg-bg/90 backdrop-blur-lg border-b border-border h-[68px] px-5 md:px-7 flex items-center justify-between">
+      <nav
+        className="sticky top-0 z-50 backdrop-blur-lg border-b border-border h-[68px] px-5 md:px-7 flex items-center justify-between"
+        style={{ background: "var(--nav-bg)" }}
+      >
         <div className="flex items-center gap-10">
           <Link to="/" className="shrink-0">
             <Brand />
@@ -67,6 +71,7 @@ export function Nav() {
           </ul>
         </div>
         <div className="flex items-center gap-3">
+          <ThemeToggle className="hidden md:flex" />
           <span className="hidden lg:inline-flex font-display italic font-extrabold text-[10.5px] uppercase tracking-[0.1em] text-teal border-[1.5px] border-teal px-2.5 py-1">
             Valorant · 2025
           </span>

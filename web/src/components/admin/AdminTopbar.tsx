@@ -3,6 +3,7 @@ import {
   CommandPalette,
   useCommandPalette,
 } from "@/components/admin/CommandPalette";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useAuth } from "@/lib/auth";
 
 interface AdminTopbarProps {
@@ -43,6 +44,7 @@ export function AdminTopbar({ title, subtitle, actions }: AdminTopbarProps) {
               ⌘K
             </kbd>
           </button>
+          <ThemeToggle />
           <button className="w-10 h-10 bg-surface-3 border border-border flex items-center justify-center hover:bg-white relative">
             <Bell weight="bold" size={16} className="text-navy" />
             <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-lime rounded-full" />

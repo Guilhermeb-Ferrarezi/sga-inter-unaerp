@@ -17,6 +17,14 @@ web/dist/
 web/.cache/
 bun.lock.bak
 
+# Playwright
+web/test-results/
+web/playwright-report/
+web/playwright/.cache/
+
+# Vitest
+web/coverage/
+
 # Docker
 pgdata/
 
