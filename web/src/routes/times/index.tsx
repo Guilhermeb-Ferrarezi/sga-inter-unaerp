@@ -16,8 +16,8 @@ type GroupFilter = "all" | "A" | "B" | "C";
 function TeamsListPage() {
   const [filter, setFilter] = useState<GroupFilter>("all");
 
-  // 🌐 GraphQL — times reais (fallback automático pro mock)
-  const { teams, usingFallback } = useEditionTeams("valorant");
+  // 🌐 GraphQL — times reais
+  const { teams, loading, error } = useEditionTeams("valorant");
 
   const sorted = [...teams].sort((a, b) => b.points - a.points || b.pointsDiff - a.pointsDiff);
   const visible = filter === "all" ? sorted : sorted.filter((t) => t.group === filter);
@@ -35,7 +35,7 @@ function TeamsListPage() {
         }
         subtitle={`${teams.length} times confirmados na edição Valorant 2025. Cada time tem roster próprio, histórico de confrontos e estatísticas acompanhadas em tempo real.`}
       >
-        {!usingFallback && (
+        {!loading && !error && teams.length > 0 && (
           <div className="inline-flex items-center gap-2 bg-teal/10 border border-teal text-teal px-3 py-1.5 font-display italic font-extrabold uppercase text-[10.5px] tracking-[0.1em] mt-3">
             <span className="w-2 h-2 bg-teal rounded-full animate-pulse-dot" />
             Dados ao vivo do PostgreSQL
@@ -61,17 +61,31 @@ function TeamsListPage() {
       </PageHeader>
 
       <Section decoNum="TMS">
-        <motion.div
-          key={filter}
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-2"
-        >
-          {visible.map((t) => (
-            <TeamCard key={t.id} team={t} rank={sorted.indexOf(t) + 1} />
-          ))}
-        </motion.div>
+        {loading ? (
+          <div className="text-center py-20 text-fg-mute font-display italic font-extrabold uppercase">
+            Carregando times…
+          </div>
+        ) : error ? (
+          <div className="text-center py-20 text-red-500 font-display italic font-extrabold uppercase">
+            Erro ao carregar dados. Verifique a conexão com a API.
+          </div>
+        ) : visible.length === 0 ? (
+          <div className="text-center py-20 text-fg-mute font-display italic font-extrabold uppercase">
+            Nenhum time cadastrado nesta edição.
+          </div>
+        ) : (
+          <motion.div
+            key={filter}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-2"
+          >
+            {visible.map((t) => (
+              <TeamCard key={t.id} team={t} rank={sorted.indexOf(t) + 1} />
+            ))}
+          </motion.div>
+        )}
       </Section>
     </>
   );

@@ -16,10 +16,14 @@ const queryClient = new QueryClient({
   },
 });
 
+// Base path do Vite vira basepath do router. Tira trailing slash pro TanStack.
+const VITE_BASE = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
+
 const router = createRouter({
   routeTree,
   defaultPreload: "intent",
   scrollRestoration: true,
+  basepath: VITE_BASE || undefined,
 });
 
 declare module "@tanstack/react-router" {

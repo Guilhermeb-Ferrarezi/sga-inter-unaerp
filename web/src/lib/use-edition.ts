@@ -1,5 +1,4 @@
 import { gql, useQuery } from "@apollo/client";
-import { teams as mockTeams } from "@/data/mock";
 import { editionToMockTeams, type GqlEdition } from "@/data/adapters";
 import type { Team } from "@/data/types";
 
@@ -32,13 +31,13 @@ const ACTIVE_EDITION_QUERY = gql`
 interface UseEditionTeamsResult {
   teams: Team[];
   loading: boolean;
-  usingFallback: boolean;
+  error: boolean;
   edition: GqlEdition | null;
 }
 
 /**
  * Carrega edição ativa + times via GraphQL.
- * Em caso de erro de rede ou API offline, retorna times do mock.
+ * Retorna estado real (loading/error) — sem fallback mock.
  */
 export function useEditionTeams(
   gameSlug: string = "valorant"
@@ -50,24 +49,13 @@ export function useEditionTeams(
     errorPolicy: "all",
   });
 
-  if (loading && !data) {
-    return { teams: [], loading: true, usingFallback: false, edition: null };
-  }
+  const edition = data?.activeEdition ?? null;
+  const teams = edition ? editionToMockTeams(edition) : [];
 
-  if (error || !data?.activeEdition) {
-    return {
-      teams: mockTeams,
-      loading: false,
-      usingFallback: true,
-      edition: null,
-    };
-  }
-
-  const edition = data.activeEdition;
-  const teams = editionToMockTeams(edition);
-  if (teams.length === 0) {
-    // Edição sem times cadastrados — usar mock pra UI não ficar vazia
-    return { teams: mockTeams, loading: false, usingFallback: true, edition };
-  }
-  return { teams, loading: false, usingFallback: false, edition };
+  return {
+    teams,
+    loading,
+    error: !!error,
+    edition,
+  };
 }

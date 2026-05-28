@@ -12,8 +12,8 @@ export const Route = createFileRoute("/classificacao")({
 });
 
 function StandingsPage() {
-  // 🌐 GraphQL — times reais da edição ativa (fallback automático pro mock)
-  const { teams, usingFallback } = useEditionTeams("valorant");
+  // 🌐 GraphQL — times reais da edição ativa
+  const { teams, loading, error } = useEditionTeams("valorant");
 
   const sorted = [...teams].sort(
     (a, b) => b.points - a.points || b.pointsDiff - a.pointsDiff
@@ -39,7 +39,17 @@ function StandingsPage() {
       />
 
       <Section decoNum="CLS">
-        {!usingFallback && (
+        {loading && (
+          <div className="text-center py-12 text-fg-mute font-display italic font-extrabold uppercase">
+            Carregando classificação…
+          </div>
+        )}
+        {error && (
+          <div className="text-center py-12 text-red-500 font-display italic font-extrabold uppercase">
+            Erro ao carregar. Verifique a API.
+          </div>
+        )}
+        {!loading && !error && teams.length > 0 && (
           <div className="inline-flex items-center gap-2 bg-teal/10 border border-teal text-teal px-3 py-1.5 font-display italic font-extrabold uppercase text-[10.5px] tracking-[0.1em] mb-5">
             <span className="w-2 h-2 bg-teal rounded-full animate-pulse-dot" />
             Dados ao vivo · PostgreSQL via GraphQL

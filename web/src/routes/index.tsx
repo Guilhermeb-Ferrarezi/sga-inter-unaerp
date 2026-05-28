@@ -27,8 +27,8 @@ function HomePage() {
   const topPlayers = playersByKD().slice(0, 3);
   const recentHl = highlights.slice(0, 4);
 
-  // 🌐 GraphQL — times reais da edição ativa (fallback pro mock se API offline)
-  const { teams } = useEditionTeams("valorant");
+  // 🌐 GraphQL — times reais da edição ativa
+  const { teams, loading } = useEditionTeams("valorant");
 
   return (
     <>
@@ -108,7 +108,13 @@ function HomePage() {
           }
           link={{ to: "/classificacao", label: "Tabela completa →" }}
         />
-        <StandingsTable teams={teams} qualifyCutoff={4} />
+        {loading ? (
+          <div className="text-center py-12 text-fg-mute font-display italic font-extrabold uppercase">
+            Carregando classificação…
+          </div>
+        ) : (
+          <StandingsTable teams={teams} qualifyCutoff={4} />
+        )}
       </Section>
 
       {/* 04 TOP JOGADORES */}
