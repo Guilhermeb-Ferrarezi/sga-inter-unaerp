@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ApolloProvider } from "@apollo/client";
 import { apolloClient } from "./lib/apollo";
 import { AuthProvider } from "./lib/auth";
+import { ErrorBoundary } from "./components/layout/ErrorBoundary";
 import { routeTree } from "./routeTree.gen";
 import "./styles/globals.css";
 
@@ -28,12 +29,14 @@ declare module "@tanstack/react-router" {
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <ApolloProvider client={apolloClient}>
-      <AuthProvider>
-        <QueryClientProvider client={queryClient}>
-          <RouterProvider router={router} />
-        </QueryClientProvider>
-      </AuthProvider>
-    </ApolloProvider>
+    <ErrorBoundary>
+      <ApolloProvider client={apolloClient}>
+        <AuthProvider>
+          <QueryClientProvider client={queryClient}>
+            <RouterProvider router={router} />
+          </QueryClientProvider>
+        </AuthProvider>
+      </ApolloProvider>
+    </ErrorBoundary>
   </React.StrictMode>
 );

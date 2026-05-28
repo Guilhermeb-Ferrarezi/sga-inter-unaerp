@@ -1,8 +1,9 @@
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Play } from "@phosphor-icons/react";
 import { LiveDot } from "@/components/ui/live-dot";
 import { TeamLogo } from "@/components/ui/team-logo";
 import { findTeam } from "@/data/mock";
+import { useLiveMatchPolling } from "@/lib/use-live-match";
 import { cn } from "@/lib/utils";
 import type { Match } from "@/data/types";
 
@@ -23,8 +24,21 @@ export function LiveMatchFeature({
 }: LiveMatchFeatureProps) {
   const a = findTeam(match.teamA);
   const b = findTeam(match.teamB);
+
+  const live = useLiveMatchPolling(
+    match.id,
+    {
+      scoreA: liveScoreA,
+      scoreB: liveScoreB,
+      map: liveMap,
+      status: match.status,
+    },
+    { enabled: match.status === "live" }
+  );
+
   if (!a || !b) return null;
-  const aLeading = liveScoreA > liveScoreB;
+  const aLeading = live.scoreA > live.scoreB;
+  const isLive = live.status === "live";
 
   return (
     <motion.div
@@ -35,11 +49,11 @@ export function LiveMatchFeature({
     >
       <div>
         <div className="text-[10.5px] text-teal font-extrabold uppercase tracking-[0.12em] flex items-center gap-2 mb-2">
-          <LiveDot variant="lime" />
-          Ao Vivo agora
+          {isLive ? <LiveDot variant="lime" /> : null}
+          {isLive ? "Ao Vivo agora" : "Encerrada"}
         </div>
         <div className="font-display italic font-extrabold text-[22px] uppercase text-navy">
-          {match.group} · {match.round} · {liveMap}
+          {match.group} · {match.round} · {live.map ?? liveMap}
         </div>
       </div>
 
@@ -51,13 +65,13 @@ export function LiveMatchFeature({
           </div>
         </div>
         <div className="text-center">
-          <div className="font-display italic font-black text-[84px] leading-none text-navy tracking-[-0.04em]">
-            <span className={cn(aLeading && "text-teal")}>{liveScoreA}</span>
-            <span className="text-border-strong mx-2 font-normal">·</span>
-            <span className={cn(!aLeading && "text-teal")}>{liveScoreB}</span>
+          <div className="font-display italic font-black text-[84px] leading-none text-navy tracking-[-0.04em] flex items-center justify-center gap-1">
+            <AnimatedScore value={live.scoreA} pulse={live.lastChanged === "a"} active={aLeading} />
+            <span className="text-border-strong font-normal">·</span>
+            <AnimatedScore value={live.scoreB} pulse={live.lastChanged === "b"} active={!aLeading} />
           </div>
           <div className="text-[11px] text-fg-mute uppercase tracking-[0.12em] font-extrabold mt-2">
-            {liveStatus}
+            {isLive ? liveStatus : "Resultado final"}
           </div>
         </div>
         <div className="flex flex-col items-center gap-2.5 min-w-[130px]">
@@ -73,5 +87,36 @@ export function LiveMatchFeature({
         Assistir
       </button>
     </motion.div>
+  );
+}
+
+function AnimatedScore({
+  value,
+  pulse,
+  active,
+}: {
+  value: number;
+  pulse: boolean;
+  active: boolean;
+}) {
+  return (
+    <span className="relative inline-block">
+      <AnimatePresence mode="popLayout">
+        <motion.span
+          key={value}
+          initial={{ y: -16, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: 16, opacity: 0 }}
+          transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+          className={cn(
+            "inline-block tabular-nums",
+            active && "text-teal",
+            pulse && "drop-shadow-[0_0_12px_rgba(46,170,128,0.6)]"
+          )}
+        >
+          {value}
+        </motion.span>
+      </AnimatePresence>
+    </span>
   );
 }
