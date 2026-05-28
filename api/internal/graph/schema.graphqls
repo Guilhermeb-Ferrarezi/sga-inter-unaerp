@@ -1,0 +1,149 @@
+scalar Time
+scalar UUID
+
+type Game {
+  id: UUID!
+  slug: String!
+  name: String!
+  coverUrl: String
+  active: Boolean!
+}
+
+type Edition {
+  id: UUID!
+  game: Game!
+  year: Int!
+  name: String!
+  status: String!
+  startedAt: Time
+  endedAt: Time
+  teams: [EditionTeam!]!
+}
+
+type Team {
+  id: UUID!
+  name: String!
+  slug: String!
+  logoUrl: String
+  primaryColor: String
+}
+
+type EditionTeam {
+  id: UUID!
+  team: Team!
+  edition: Edition!
+  seed: Int
+  finalPlacement: Int
+  wins: Int!
+  losses: Int!
+  roster: [RosterEntry!]!
+}
+
+type Player {
+  id: UUID!
+  sgaUserId: Int
+  ign: String!
+  avatarUrl: String
+  role: String
+}
+
+type RosterEntry {
+  player: Player!
+  isCaptain: Boolean!
+}
+
+type Match {
+  id: UUID!
+  edition: Edition!
+  teamA: EditionTeam!
+  teamB: EditionTeam!
+  round: String!
+  scheduledAt: Time
+  status: String!
+  result: MatchResult
+}
+
+type MatchResult {
+  id: UUID!
+  winner: EditionTeam!
+  map: String
+  scoreA: Int!
+  scoreB: Int!
+  playedAt: Time!
+}
+
+type Highlight {
+  id: UUID!
+  edition: Edition!
+  match: Match
+  cfStreamId: String!
+  title: String!
+  thumbnailUrl: String
+  publishedAt: Time!
+}
+
+type Media {
+  id: UUID!
+  edition: Edition!
+  match: Match
+  r2Key: String!
+  url: String!
+  caption: String
+  type: String!
+}
+
+type Standing {
+  editionTeam: EditionTeam!
+  wins: Int!
+  losses: Int!
+  finalPlacement: Int
+}
+
+type PresignedUpload {
+  uploadUrl: String!
+  publicUrl: String!
+  r2Key: String!
+}
+
+type Query {
+  games: [Game!]!
+  activeEdition(gameSlug: String!): Edition
+  edition(id: UUID!): Edition
+  editions(gameSlug: String!): [Edition!]!
+
+  teams(editionId: UUID!): [EditionTeam!]!
+  team(slug: String!): Team
+
+  standings(editionId: UUID!): [Standing!]!
+
+  matches(editionId: UUID!, round: String): [Match!]!
+  match(id: UUID!): Match
+
+  player(id: UUID!): Player
+
+  highlights(editionId: UUID!): [Highlight!]!
+  gallery(editionId: UUID!): [Media!]!
+}
+
+type Mutation {
+  createGame(slug: String!, name: String!, coverUrl: String): Game!
+  createEdition(gameId: UUID!, year: Int!, name: String!): Edition!
+  updateEditionStatus(id: UUID!, status: String!): Edition!
+
+  createTeam(name: String!, slug: String!, logoUrl: String, primaryColor: String): Team!
+  updateTeam(id: UUID!, name: String!, logoUrl: String, primaryColor: String): Team!
+  addTeamToEdition(editionId: UUID!, teamId: UUID!, seed: Int): EditionTeam!
+
+  createPlayer(ign: String!, sgaUserId: Int, avatarUrl: String, role: String): Player!
+  addPlayerToRoster(editionTeamId: UUID!, playerId: UUID!, isCaptain: Boolean): RosterEntry!
+
+  createMatch(editionId: UUID!, teamAId: UUID!, teamBId: UUID!, round: String!, scheduledAt: Time): Match!
+  recordResult(matchId: UUID!, winnerId: UUID!, map: String, scoreA: Int!, scoreB: Int!): MatchResult!
+
+  uploadMediaPresignedUrl(editionId: UUID!, matchId: UUID, fileType: String!, mediaType: String!): PresignedUpload!
+  confirmMediaUpload(editionId: UUID!, matchId: UUID, r2Key: String!, url: String!, caption: String, mediaType: String!): Media!
+
+  createHighlight(editionId: UUID!, matchId: UUID, cfStreamId: String!, title: String!, thumbnailUrl: String): Highlight!
+
+  importEdition(payload: String!): Boolean!
+}
