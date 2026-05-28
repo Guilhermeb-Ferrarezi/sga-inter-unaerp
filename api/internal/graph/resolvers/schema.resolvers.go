@@ -7,10 +7,14 @@ package resolvers
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
+	db "github.com/sg/unaerp-api/internal/db/sqlc"
 	"github.com/sg/unaerp-api/internal/graph/generated"
 	"github.com/sg/unaerp-api/internal/graph/model"
 )
@@ -87,62 +91,310 @@ func (r *mutationResolver) ImportEdition(ctx context.Context, payload string) (b
 
 // Games is the resolver for the games field.
 func (r *queryResolver) Games(ctx context.Context) ([]*model.Game, error) {
-	panic(fmt.Errorf("not implemented: Games - games"))
+	rows, err := r.DB.ListGames(ctx)
+	if err != nil {
+		return nil, err
+	}
+	result := make([]*model.Game, 0, len(rows))
+	for _, g := range rows {
+		result = append(result, gameToModel(g))
+	}
+	return result, nil
 }
 
 // ActiveEdition is the resolver for the activeEdition field.
 func (r *queryResolver) ActiveEdition(ctx context.Context, gameSlug string) (*model.Edition, error) {
-	panic(fmt.Errorf("not implemented: ActiveEdition - activeEdition"))
+	cacheKey := "active_edition:" + gameSlug
+
+	// try cache
+	if r.Redis != nil {
+		cached, err := r.Redis.Get(ctx, cacheKey).Bytes()
+		if err == nil {
+			var m model.Edition
+			if jsonErr := json.Unmarshal(cached, &m); jsonErr == nil {
+				return &m, nil
+			}
+		}
+	}
+
+	e, err := r.DB.GetActiveEdition(ctx, gameSlug)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	game, err := r.DB.GetGameBySlug(ctx, gameSlug)
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		return nil, err
+	}
+	var gameModel *model.Game
+	if err == nil {
+		gameModel = gameToModel(game)
+	}
+
+	result := editionToModel(e, gameModel)
+
+	// write to cache
+	if r.Redis != nil {
+		if data, jsonErr := json.Marshal(result); jsonErr == nil {
+			r.Redis.Set(ctx, cacheKey, data, 30*time.Second)
+		}
+	}
+
+	return result, nil
 }
 
 // Edition is the resolver for the edition field.
 func (r *queryResolver) Edition(ctx context.Context, id uuid.UUID) (*model.Edition, error) {
-	panic(fmt.Errorf("not implemented: Edition - edition"))
+	e, err := r.DB.GetEditionByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	// No GetGameByID sqlc query exists — build a minimal game reference with only the ID.
+	gameModel := &model.Game{ID: e.GameID}
+
+	return editionToModel(e, gameModel), nil
 }
 
 // Editions is the resolver for the editions field.
 func (r *queryResolver) Editions(ctx context.Context, gameSlug string) ([]*model.Edition, error) {
-	panic(fmt.Errorf("not implemented: Editions - editions"))
+	game, err := r.DB.GetGameBySlug(ctx, gameSlug)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return []*model.Edition{}, nil
+		}
+		return nil, err
+	}
+	gameModel := gameToModel(game)
+
+	rows, err := r.DB.ListEditionsByGame(ctx, game.ID)
+	if err != nil {
+		return nil, err
+	}
+	result := make([]*model.Edition, 0, len(rows))
+	for _, e := range rows {
+		result = append(result, editionToModel(e, gameModel))
+	}
+	return result, nil
 }
 
 // Teams is the resolver for the teams field.
 func (r *queryResolver) Teams(ctx context.Context, editionID uuid.UUID) ([]*model.EditionTeam, error) {
-	panic(fmt.Errorf("not implemented: Teams - teams"))
+	e, err := r.DB.GetEditionByID(ctx, editionID)
+	if err != nil {
+		return nil, err
+	}
+	editionModel := editionToModel(e, &model.Game{ID: e.GameID})
+
+	rows, err := r.DB.ListTeamsByEdition(ctx, editionID)
+	if err != nil {
+		return nil, err
+	}
+	result := make([]*model.EditionTeam, 0, len(rows))
+	for _, row := range rows {
+		result = append(result, editionTeamFromRow(row, editionModel))
+	}
+	return result, nil
 }
 
 // Team is the resolver for the team field.
 func (r *queryResolver) Team(ctx context.Context, slug string) (*model.Team, error) {
-	panic(fmt.Errorf("not implemented: Team - team"))
+	t, err := r.DB.GetTeamBySlug(ctx, slug)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return teamToModel(t), nil
 }
 
 // Standings is the resolver for the standings field.
 func (r *queryResolver) Standings(ctx context.Context, editionID uuid.UUID) ([]*model.Standing, error) {
-	panic(fmt.Errorf("not implemented: Standings - standings"))
+	cacheKey := fmt.Sprintf("standings:%s", editionID.String())
+
+	// try cache
+	if r.Redis != nil {
+		cached, err := r.Redis.Get(ctx, cacheKey).Bytes()
+		if err == nil {
+			var standings []*model.Standing
+			if jsonErr := json.Unmarshal(cached, &standings); jsonErr == nil {
+				return standings, nil
+			}
+		}
+	}
+
+	e, err := r.DB.GetEditionByID(ctx, editionID)
+	if err != nil {
+		return nil, err
+	}
+	editionModel := editionToModel(e, &model.Game{ID: e.GameID})
+
+	rows, err := r.DB.ListTeamsByEdition(ctx, editionID)
+	if err != nil {
+		return nil, err
+	}
+
+	standings := make([]*model.Standing, 0, len(rows))
+	for _, row := range rows {
+		et := editionTeamFromRow(row, editionModel)
+		standings = append(standings, &model.Standing{
+			EditionTeam:    et,
+			Wins:           int(row.Wins),
+			Losses:         int(row.Losses),
+			FinalPlacement: int32PtrToIntPtr(row.FinalPlacement),
+		})
+	}
+
+	// write to cache
+	if r.Redis != nil {
+		if data, jsonErr := json.Marshal(standings); jsonErr == nil {
+			r.Redis.Set(ctx, cacheKey, data, 30*time.Second)
+		}
+	}
+
+	return standings, nil
 }
 
 // Matches is the resolver for the matches field.
 func (r *queryResolver) Matches(ctx context.Context, editionID uuid.UUID, round *string) ([]*model.Match, error) {
-	panic(fmt.Errorf("not implemented: Matches - matches"))
+	e, err := r.DB.GetEditionByID(ctx, editionID)
+	if err != nil {
+		return nil, err
+	}
+	editionModel := editionToModel(e, &model.Game{ID: e.GameID})
+
+	// pre-fetch teams for this edition to resolve teamA/teamB
+	teamRows, err := r.DB.ListTeamsByEdition(ctx, editionID)
+	if err != nil {
+		return nil, err
+	}
+	// build map: edition_team_id -> *model.EditionTeam
+	etByTeamID := make(map[uuid.UUID]*model.EditionTeam, len(teamRows))
+	for _, tr := range teamRows {
+		et := editionTeamFromRow(tr, editionModel)
+		etByTeamID[tr.ID] = et // tr.ID is team.id, not edition_team_id
+	}
+	// also map by edition_team_id
+	etByEditionTeamID := make(map[uuid.UUID]*model.EditionTeam, len(teamRows))
+	for _, tr := range teamRows {
+		et := editionTeamFromRow(tr, editionModel)
+		etByEditionTeamID[tr.EditionTeamID] = et
+	}
+
+	rows, err := r.DB.ListMatchesByEdition(ctx, editionID)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]*model.Match, 0, len(rows))
+	for _, row := range rows {
+		if round != nil && row.Round != *round {
+			continue
+		}
+
+		// find teamA and teamB edition_teams by team id
+		teamA := findEditionTeamByTeamID(etByTeamID, row.TeamAID)
+		teamB := findEditionTeamByTeamID(etByTeamID, row.TeamBID)
+
+		var matchResult *model.MatchResult
+		if row.WinnerID != nil {
+			winner := findEditionTeamByTeamID(etByTeamID, *row.WinnerID)
+			matchResult = matchResultFromListRow(row, winner)
+		}
+
+		result = append(result, matchFromListRow(row, editionModel, teamA, teamB, matchResult))
+	}
+	return result, nil
 }
 
 // Match is the resolver for the match field.
 func (r *queryResolver) Match(ctx context.Context, id uuid.UUID) (*model.Match, error) {
-	panic(fmt.Errorf("not implemented: Match - match"))
+	row, err := r.DB.GetMatchByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	e, err := r.DB.GetEditionByID(ctx, row.EditionID)
+	if err != nil {
+		return nil, err
+	}
+	editionModel := editionToModel(e, &model.Game{ID: e.GameID})
+
+	// pre-fetch teams
+	teamRows, err := r.DB.ListTeamsByEdition(ctx, row.EditionID)
+	if err != nil {
+		return nil, err
+	}
+	etByTeamID := make(map[uuid.UUID]*model.EditionTeam, len(teamRows))
+	for _, tr := range teamRows {
+		et := editionTeamFromRow(tr, editionModel)
+		etByTeamID[tr.ID] = et
+	}
+
+	teamA := findEditionTeamByTeamID(etByTeamID, row.TeamAID)
+	teamB := findEditionTeamByTeamID(etByTeamID, row.TeamBID)
+
+	var matchResult *model.MatchResult
+	if row.WinnerID != nil {
+		winner := findEditionTeamByTeamID(etByTeamID, *row.WinnerID)
+		matchResult = matchResultFromGetRow(row, winner)
+	}
+
+	return matchFromGetRow(row, editionModel, teamA, teamB, matchResult), nil
 }
 
 // Player is the resolver for the player field.
 func (r *queryResolver) Player(ctx context.Context, id uuid.UUID) (*model.Player, error) {
-	panic(fmt.Errorf("not implemented: Player - player"))
+	p, err := r.DB.GetPlayerByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	return playerToModel(p), nil
 }
 
 // Highlights is the resolver for the highlights field.
 func (r *queryResolver) Highlights(ctx context.Context, editionID uuid.UUID) ([]*model.Highlight, error) {
-	panic(fmt.Errorf("not implemented: Highlights - highlights"))
+	e, err := r.DB.GetEditionByID(ctx, editionID)
+	if err != nil {
+		return nil, err
+	}
+	editionModel := editionToModel(e, &model.Game{ID: e.GameID})
+
+	rows, err := r.DB.ListHighlightsByEdition(ctx, editionID)
+	if err != nil {
+		return nil, err
+	}
+	result := make([]*model.Highlight, 0, len(rows))
+	for _, h := range rows {
+		result = append(result, highlightToModel(h, editionModel))
+	}
+	return result, nil
 }
 
 // Gallery is the resolver for the gallery field.
 func (r *queryResolver) Gallery(ctx context.Context, editionID uuid.UUID) ([]*model.Media, error) {
-	panic(fmt.Errorf("not implemented: Gallery - gallery"))
+	e, err := r.DB.GetEditionByID(ctx, editionID)
+	if err != nil {
+		return nil, err
+	}
+	editionModel := editionToModel(e, &model.Game{ID: e.GameID})
+
+	rows, err := r.DB.ListMediaByEdition(ctx, db.ListMediaByEditionParams{
+		EditionID: editionID,
+		Type:      "photo",
+	})
+	if err != nil {
+		return nil, err
+	}
+	result := make([]*model.Media, 0, len(rows))
+	for _, m := range rows {
+		result = append(result, mediaToModel(m, editionModel))
+	}
+	return result, nil
 }
 
 // Mutation returns generated.MutationResolver implementation.
@@ -153,3 +405,12 @@ func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
+
+// findEditionTeamByTeamID looks up an EditionTeam in the map by the underlying team's ID.
+// The map key is team.id (not edition_team.id).
+func findEditionTeamByTeamID(m map[uuid.UUID]*model.EditionTeam, teamID uuid.UUID) *model.EditionTeam {
+	if et, ok := m[teamID]; ok {
+		return et
+	}
+	return nil
+}
