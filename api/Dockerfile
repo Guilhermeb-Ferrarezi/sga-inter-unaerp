@@ -1,5 +1,5 @@
 # ──────────── Build stage ────────────
-FROM golang:1.25-alpine AS build
+FROM golang:1.25.9-alpine AS build
 WORKDIR /src
 
 RUN apk add --no-cache git ca-certificates tzdata
@@ -11,7 +11,7 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /out/api ./
 
 # ──────────── Migrations stage ────────────
-FROM golang:1.25-alpine AS migrate-build
+FROM golang:1.25.9-alpine AS migrate-build
 RUN go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@v4.18.1
 # Binário em $GOPATH/bin/migrate (default /go/bin/migrate)
 
