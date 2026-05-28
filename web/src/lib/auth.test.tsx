@@ -31,7 +31,7 @@ function clearCookie(name: string) {
 
 describe("useAuth", () => {
   beforeEach(() => {
-    clearCookie("sg_auth");
+    clearCookie("sga_auth");
   });
 
   it("starts unauthenticated when no cookie", () => {
@@ -49,7 +49,7 @@ describe("useAuth", () => {
       role: 99,
       exp: Math.floor(Date.now() / 1000) + 3600,
     });
-    setCookie("sg_auth", token);
+    setCookie("sga_auth", token);
     const { result } = renderHook(() => useAuth(), { wrapper });
     expect(result.current.user?.userId).toBe(7);
     expect(result.current.user?.login).toBe("guilherme");
@@ -65,7 +65,7 @@ describe("useAuth", () => {
       role: 99,
       exp: Math.floor(Date.now() / 1000) - 100,
     });
-    setCookie("sg_auth", token);
+    setCookie("sga_auth", token);
     const { result } = renderHook(() => useAuth(), { wrapper });
     expect(result.current.isAuthenticated).toBe(false);
   });
@@ -78,7 +78,7 @@ describe("useAuth", () => {
       role: 10,
       exp: Math.floor(Date.now() / 1000) + 3600,
     });
-    setCookie("sg_auth", token);
+    setCookie("sga_auth", token);
     const { result } = renderHook(() => useAuth(), { wrapper });
     expect(result.current.isAuthenticated).toBe(true);
     expect(result.current.isAdmin).toBe(false);
@@ -92,7 +92,7 @@ describe("useAuth", () => {
       role: 99,
       exp: Math.floor(Date.now() / 1000) + 3600,
     });
-    setCookie("sg_auth", token);
+    setCookie("sga_auth", token);
     const { result } = renderHook(() => useAuth(), { wrapper });
     expect(result.current.isAuthenticated).toBe(true);
     act(() => {
@@ -103,7 +103,7 @@ describe("useAuth", () => {
   });
 
   it("malformed token treated as no auth", () => {
-    setCookie("sg_auth", "garbage");
+    setCookie("sga_auth", "garbage");
     const { result } = renderHook(() => useAuth(), { wrapper });
     expect(result.current.user).toBeNull();
   });

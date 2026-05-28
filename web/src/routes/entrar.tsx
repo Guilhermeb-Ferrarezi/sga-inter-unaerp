@@ -63,7 +63,7 @@ function LoginPage() {
         <div className="space-y-3 mb-8">
           <Feature
             icon={ShieldCheck}
-            text="SSO seguro via HTTPS — cookie sg_auth"
+            text="SSO seguro via HTTPS — cookie sga_auth"
           />
           <Feature
             icon={Trophy}

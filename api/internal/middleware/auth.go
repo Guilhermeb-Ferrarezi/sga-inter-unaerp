@@ -84,7 +84,7 @@ func UserFromContext(ctx context.Context) *AuthUser {
 }
 
 func extractToken(c *gin.Context) string {
-	if cookie, err := c.Cookie("sg_auth"); err == nil && cookie != "" {
+	if cookie, err := c.Cookie("sga_auth"); err == nil && cookie != "" {
 		return cookie
 	}
 	if auth := c.GetHeader("Authorization"); strings.HasPrefix(auth, "Bearer ") {

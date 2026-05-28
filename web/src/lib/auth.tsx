@@ -58,14 +58,14 @@ const ADMIN_ROLE_THRESHOLD = 50; // ajustar quando o spec de roles for definido
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(() => {
-    const token = readCookie("sg_auth");
+    const token = readCookie("sga_auth");
     return token ? decodeJwt(token) : null;
   });
 
   useEffect(() => {
     // re-check periodically caso o cookie expire ou seja revalidado
     const interval = setInterval(() => {
-      const token = readCookie("sg_auth");
+      const token = readCookie("sga_auth");
       const next = token ? decodeJwt(token) : null;
       setUser((prev) => {
         if (!prev && !next) return prev;
@@ -83,7 +83,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isAuthenticated: !!user,
       signOut: () => {
         document.cookie =
-          "sg_auth=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT";
+          "sga_auth=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT";
         setUser(null);
       },
     }),

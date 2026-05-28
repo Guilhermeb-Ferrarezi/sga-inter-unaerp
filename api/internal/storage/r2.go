@@ -10,6 +10,9 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
+// Prefixo dentro do bucket — todos os arquivos do projeto vivem aqui
+const KeyPrefix = "universitarios/inter-unaerp/"
+
 type R2Client struct {
 	client    *s3.Client
 	presigner *s3.PresignClient
@@ -35,11 +38,22 @@ func NewR2(accountID, accessKey, secretKey, bucket, publicURL string) *R2Client 
 	}
 }
 
+// prefixKey garante que toda key fica sob universitarios/inter-unaerp/
+func prefixKey(key string) string {
+	if len(key) > 0 && key[0] == '/' {
+		key = key[1:]
+	}
+	if len(key) >= len(KeyPrefix) && key[:len(KeyPrefix)] == KeyPrefix {
+		return key
+	}
+	return KeyPrefix + key
+}
+
 // PresignUpload returns a presigned PUT URL valid for 15 minutes.
 func (r *R2Client) PresignUpload(ctx context.Context, key, contentType string) (string, error) {
 	req, err := r.presigner.PresignPutObject(ctx, &s3.PutObjectInput{
 		Bucket:      aws.String(r.bucket),
-		Key:         aws.String(key),
+		Key:         aws.String(prefixKey(key)),
 		ContentType: aws.String(contentType),
 	}, s3.WithPresignExpires(15*time.Minute))
 	if err != nil {
@@ -50,5 +64,5 @@ func (r *R2Client) PresignUpload(ctx context.Context, key, contentType string) (
 
 // PublicURL constructs the public URL for an uploaded object.
 func (r *R2Client) PublicURL(key string) string {
-	return fmt.Sprintf("%s/%s", r.publicURL, key)
+	return fmt.Sprintf("%s/%s", r.publicURL, prefixKey(key))
 }
