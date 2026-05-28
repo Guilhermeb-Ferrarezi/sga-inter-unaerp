@@ -1,6 +1,7 @@
 import { createRootRoute, Outlet, useRouterState, Link } from "@tanstack/react-router";
 import { Nav } from "@/components/layout/Nav";
 import { Footer } from "@/components/layout/Footer";
+import { ApiStatusBanner } from "@/components/layout/ApiStatusBanner";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, MagnifyingGlass } from "@phosphor-icons/react";
 
@@ -19,6 +20,7 @@ function RootLayout() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <ApiStatusBanner />
       <Nav />
       <main className="flex-1">
         <Outlet />
