@@ -7,10 +7,8 @@ package db
 
 import (
 	"context"
-	"database/sql"
-	"time"
 
-	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createHighlight = `-- name: CreateHighlight :one
@@ -20,16 +18,16 @@ RETURNING id, edition_id, match_id, cf_stream_id, title, thumbnail_url, publishe
 `
 
 type CreateHighlightParams struct {
-	EditionID    uuid.UUID      `json:"edition_id"`
-	MatchID      uuid.NullUUID  `json:"match_id"`
-	CfStreamID   string         `json:"cf_stream_id"`
-	Title        string         `json:"title"`
-	ThumbnailUrl sql.NullString `json:"thumbnail_url"`
-	PublishedAt  time.Time      `json:"published_at"`
+	EditionID    pgtype.UUID        `json:"edition_id"`
+	MatchID      pgtype.UUID        `json:"match_id"`
+	CfStreamID   string             `json:"cf_stream_id"`
+	Title        string             `json:"title"`
+	ThumbnailUrl *string            `json:"thumbnail_url"`
+	PublishedAt  pgtype.Timestamptz `json:"published_at"`
 }
 
 func (q *Queries) CreateHighlight(ctx context.Context, arg CreateHighlightParams) (Highlight, error) {
-	row := q.db.QueryRowContext(ctx, createHighlight,
+	row := q.db.QueryRow(ctx, createHighlight,
 		arg.EditionID,
 		arg.MatchID,
 		arg.CfStreamID,
@@ -57,16 +55,16 @@ RETURNING id, edition_id, match_id, r2_key, url, caption, type, created_at
 `
 
 type CreateMediaParams struct {
-	EditionID uuid.UUID      `json:"edition_id"`
-	MatchID   uuid.NullUUID  `json:"match_id"`
-	R2Key     string         `json:"r2_key"`
-	Url       string         `json:"url"`
-	Caption   sql.NullString `json:"caption"`
-	Type      string         `json:"type"`
+	EditionID pgtype.UUID `json:"edition_id"`
+	MatchID   pgtype.UUID `json:"match_id"`
+	R2Key     string      `json:"r2_key"`
+	Url       string      `json:"url"`
+	Caption   *string     `json:"caption"`
+	Type      string      `json:"type"`
 }
 
 func (q *Queries) CreateMedia(ctx context.Context, arg CreateMediaParams) (Medium, error) {
-	row := q.db.QueryRowContext(ctx, createMedia,
+	row := q.db.QueryRow(ctx, createMedia,
 		arg.EditionID,
 		arg.MatchID,
 		arg.R2Key,
@@ -94,8 +92,8 @@ WHERE edition_id = $1
 ORDER BY published_at DESC
 `
 
-func (q *Queries) ListHighlightsByEdition(ctx context.Context, editionID uuid.UUID) ([]Highlight, error) {
-	rows, err := q.db.QueryContext(ctx, listHighlightsByEdition, editionID)
+func (q *Queries) ListHighlightsByEdition(ctx context.Context, editionID pgtype.UUID) ([]Highlight, error) {
+	rows, err := q.db.Query(ctx, listHighlightsByEdition, editionID)
 	if err != nil {
 		return nil, err
 	}
@@ -116,9 +114,6 @@ func (q *Queries) ListHighlightsByEdition(ctx context.Context, editionID uuid.UU
 		}
 		items = append(items, i)
 	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
@@ -132,12 +127,12 @@ ORDER BY created_at DESC
 `
 
 type ListMediaByEditionParams struct {
-	EditionID uuid.UUID `json:"edition_id"`
-	Type      string    `json:"type"`
+	EditionID pgtype.UUID `json:"edition_id"`
+	Type      string      `json:"type"`
 }
 
 func (q *Queries) ListMediaByEdition(ctx context.Context, arg ListMediaByEditionParams) ([]Medium, error) {
-	rows, err := q.db.QueryContext(ctx, listMediaByEdition, arg.EditionID, arg.Type)
+	rows, err := q.db.Query(ctx, listMediaByEdition, arg.EditionID, arg.Type)
 	if err != nil {
 		return nil, err
 	}
@@ -158,9 +153,6 @@ func (q *Queries) ListMediaByEdition(ctx context.Context, arg ListMediaByEdition
 			return nil, err
 		}
 		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err

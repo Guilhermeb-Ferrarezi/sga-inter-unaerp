@@ -7,10 +7,8 @@ package db
 
 import (
 	"context"
-	"database/sql"
-	"time"
 
-	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createMatch = `-- name: CreateMatch :one
@@ -20,15 +18,15 @@ RETURNING id, edition_id, team_a_id, team_b_id, round, scheduled_at, status, cre
 `
 
 type CreateMatchParams struct {
-	EditionID   uuid.UUID    `json:"edition_id"`
-	TeamAID     uuid.UUID    `json:"team_a_id"`
-	TeamBID     uuid.UUID    `json:"team_b_id"`
-	Round       string       `json:"round"`
-	ScheduledAt sql.NullTime `json:"scheduled_at"`
+	EditionID   pgtype.UUID        `json:"edition_id"`
+	TeamAID     pgtype.UUID        `json:"team_a_id"`
+	TeamBID     pgtype.UUID        `json:"team_b_id"`
+	Round       string             `json:"round"`
+	ScheduledAt pgtype.Timestamptz `json:"scheduled_at"`
 }
 
 func (q *Queries) CreateMatch(ctx context.Context, arg CreateMatchParams) (Match, error) {
-	row := q.db.QueryRowContext(ctx, createMatch,
+	row := q.db.QueryRow(ctx, createMatch,
 		arg.EditionID,
 		arg.TeamAID,
 		arg.TeamBID,
@@ -57,23 +55,23 @@ WHERE m.id = $1
 `
 
 type GetMatchByIDRow struct {
-	ID          uuid.UUID      `json:"id"`
-	EditionID   uuid.UUID      `json:"edition_id"`
-	TeamAID     uuid.UUID      `json:"team_a_id"`
-	TeamBID     uuid.UUID      `json:"team_b_id"`
-	Round       string         `json:"round"`
-	ScheduledAt sql.NullTime   `json:"scheduled_at"`
-	Status      string         `json:"status"`
-	CreatedAt   time.Time      `json:"created_at"`
-	WinnerID    uuid.NullUUID  `json:"winner_id"`
-	Map         sql.NullString `json:"map"`
-	ScoreA      sql.NullInt32  `json:"score_a"`
-	ScoreB      sql.NullInt32  `json:"score_b"`
-	PlayedAt    sql.NullTime   `json:"played_at"`
+	ID          pgtype.UUID        `json:"id"`
+	EditionID   pgtype.UUID        `json:"edition_id"`
+	TeamAID     pgtype.UUID        `json:"team_a_id"`
+	TeamBID     pgtype.UUID        `json:"team_b_id"`
+	Round       string             `json:"round"`
+	ScheduledAt pgtype.Timestamptz `json:"scheduled_at"`
+	Status      string             `json:"status"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	WinnerID    pgtype.UUID        `json:"winner_id"`
+	Map         *string            `json:"map"`
+	ScoreA      *int32             `json:"score_a"`
+	ScoreB      *int32             `json:"score_b"`
+	PlayedAt    pgtype.Timestamptz `json:"played_at"`
 }
 
-func (q *Queries) GetMatchByID(ctx context.Context, id uuid.UUID) (GetMatchByIDRow, error) {
-	row := q.db.QueryRowContext(ctx, getMatchByID, id)
+func (q *Queries) GetMatchByID(ctx context.Context, id pgtype.UUID) (GetMatchByIDRow, error) {
+	row := q.db.QueryRow(ctx, getMatchByID, id)
 	var i GetMatchByIDRow
 	err := row.Scan(
 		&i.ID,
@@ -102,23 +100,23 @@ ORDER BY COALESCE(mr.played_at, m.scheduled_at) DESC
 `
 
 type ListMatchesByEditionRow struct {
-	ID          uuid.UUID      `json:"id"`
-	EditionID   uuid.UUID      `json:"edition_id"`
-	TeamAID     uuid.UUID      `json:"team_a_id"`
-	TeamBID     uuid.UUID      `json:"team_b_id"`
-	Round       string         `json:"round"`
-	ScheduledAt sql.NullTime   `json:"scheduled_at"`
-	Status      string         `json:"status"`
-	CreatedAt   time.Time      `json:"created_at"`
-	WinnerID    uuid.NullUUID  `json:"winner_id"`
-	Map         sql.NullString `json:"map"`
-	ScoreA      sql.NullInt32  `json:"score_a"`
-	ScoreB      sql.NullInt32  `json:"score_b"`
-	PlayedAt    sql.NullTime   `json:"played_at"`
+	ID          pgtype.UUID        `json:"id"`
+	EditionID   pgtype.UUID        `json:"edition_id"`
+	TeamAID     pgtype.UUID        `json:"team_a_id"`
+	TeamBID     pgtype.UUID        `json:"team_b_id"`
+	Round       string             `json:"round"`
+	ScheduledAt pgtype.Timestamptz `json:"scheduled_at"`
+	Status      string             `json:"status"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	WinnerID    pgtype.UUID        `json:"winner_id"`
+	Map         *string            `json:"map"`
+	ScoreA      *int32             `json:"score_a"`
+	ScoreB      *int32             `json:"score_b"`
+	PlayedAt    pgtype.Timestamptz `json:"played_at"`
 }
 
-func (q *Queries) ListMatchesByEdition(ctx context.Context, editionID uuid.UUID) ([]ListMatchesByEditionRow, error) {
-	rows, err := q.db.QueryContext(ctx, listMatchesByEdition, editionID)
+func (q *Queries) ListMatchesByEdition(ctx context.Context, editionID pgtype.UUID) ([]ListMatchesByEditionRow, error) {
+	rows, err := q.db.Query(ctx, listMatchesByEdition, editionID)
 	if err != nil {
 		return nil, err
 	}
@@ -145,9 +143,6 @@ func (q *Queries) ListMatchesByEdition(ctx context.Context, editionID uuid.UUID)
 		}
 		items = append(items, i)
 	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
@@ -161,16 +156,16 @@ RETURNING id, match_id, winner_id, map, score_a, score_b, played_at
 `
 
 type RecordMatchResultParams struct {
-	MatchID  uuid.UUID      `json:"match_id"`
-	WinnerID uuid.UUID      `json:"winner_id"`
-	Map      sql.NullString `json:"map"`
-	ScoreA   int32          `json:"score_a"`
-	ScoreB   int32          `json:"score_b"`
-	PlayedAt time.Time      `json:"played_at"`
+	MatchID  pgtype.UUID        `json:"match_id"`
+	WinnerID pgtype.UUID        `json:"winner_id"`
+	Map      *string            `json:"map"`
+	ScoreA   int32              `json:"score_a"`
+	ScoreB   int32              `json:"score_b"`
+	PlayedAt pgtype.Timestamptz `json:"played_at"`
 }
 
 func (q *Queries) RecordMatchResult(ctx context.Context, arg RecordMatchResultParams) (MatchResult, error) {
-	row := q.db.QueryRowContext(ctx, recordMatchResult,
+	row := q.db.QueryRow(ctx, recordMatchResult,
 		arg.MatchID,
 		arg.WinnerID,
 		arg.Map,
@@ -196,12 +191,12 @@ UPDATE matches SET status = $2 WHERE id = $1 RETURNING id, edition_id, team_a_id
 `
 
 type UpdateMatchStatusParams struct {
-	ID     uuid.UUID `json:"id"`
-	Status string    `json:"status"`
+	ID     pgtype.UUID `json:"id"`
+	Status string      `json:"status"`
 }
 
 func (q *Queries) UpdateMatchStatus(ctx context.Context, arg UpdateMatchStatusParams) (Match, error) {
-	row := q.db.QueryRowContext(ctx, updateMatchStatus, arg.ID, arg.Status)
+	row := q.db.QueryRow(ctx, updateMatchStatus, arg.ID, arg.Status)
 	var i Match
 	err := row.Scan(
 		&i.ID,

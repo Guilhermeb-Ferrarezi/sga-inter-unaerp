@@ -7,10 +7,8 @@ package db
 
 import (
 	"context"
-	"database/sql"
-	"time"
 
-	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const addTeamToEdition = `-- name: AddTeamToEdition :one
@@ -20,13 +18,13 @@ RETURNING id, edition_id, team_id, seed, final_placement, wins, losses, created_
 `
 
 type AddTeamToEditionParams struct {
-	EditionID uuid.UUID     `json:"edition_id"`
-	TeamID    uuid.UUID     `json:"team_id"`
-	Seed      sql.NullInt32 `json:"seed"`
+	EditionID pgtype.UUID `json:"edition_id"`
+	TeamID    pgtype.UUID `json:"team_id"`
+	Seed      *int32      `json:"seed"`
 }
 
 func (q *Queries) AddTeamToEdition(ctx context.Context, arg AddTeamToEditionParams) (EditionTeam, error) {
-	row := q.db.QueryRowContext(ctx, addTeamToEdition, arg.EditionID, arg.TeamID, arg.Seed)
+	row := q.db.QueryRow(ctx, addTeamToEdition, arg.EditionID, arg.TeamID, arg.Seed)
 	var i EditionTeam
 	err := row.Scan(
 		&i.ID,
@@ -48,14 +46,14 @@ RETURNING id, name, slug, logo_url, primary_color, created_at
 `
 
 type CreateTeamParams struct {
-	Name         string         `json:"name"`
-	Slug         string         `json:"slug"`
-	LogoUrl      sql.NullString `json:"logo_url"`
-	PrimaryColor sql.NullString `json:"primary_color"`
+	Name         string  `json:"name"`
+	Slug         string  `json:"slug"`
+	LogoUrl      *string `json:"logo_url"`
+	PrimaryColor *string `json:"primary_color"`
 }
 
 func (q *Queries) CreateTeam(ctx context.Context, arg CreateTeamParams) (Team, error) {
-	row := q.db.QueryRowContext(ctx, createTeam,
+	row := q.db.QueryRow(ctx, createTeam,
 		arg.Name,
 		arg.Slug,
 		arg.LogoUrl,
@@ -77,8 +75,8 @@ const getEditionTeamByID = `-- name: GetEditionTeamByID :one
 SELECT id, edition_id, team_id, seed, final_placement, wins, losses, created_at FROM edition_teams WHERE id = $1
 `
 
-func (q *Queries) GetEditionTeamByID(ctx context.Context, id uuid.UUID) (EditionTeam, error) {
-	row := q.db.QueryRowContext(ctx, getEditionTeamByID, id)
+func (q *Queries) GetEditionTeamByID(ctx context.Context, id pgtype.UUID) (EditionTeam, error) {
+	row := q.db.QueryRow(ctx, getEditionTeamByID, id)
 	var i EditionTeam
 	err := row.Scan(
 		&i.ID,
@@ -98,7 +96,7 @@ SELECT id, name, slug, logo_url, primary_color, created_at FROM teams WHERE slug
 `
 
 func (q *Queries) GetTeamBySlug(ctx context.Context, slug string) (Team, error) {
-	row := q.db.QueryRowContext(ctx, getTeamBySlug, slug)
+	row := q.db.QueryRow(ctx, getTeamBySlug, slug)
 	var i Team
 	err := row.Scan(
 		&i.ID,
@@ -120,21 +118,21 @@ ORDER BY et.wins DESC, et.losses ASC
 `
 
 type ListTeamsByEditionRow struct {
-	ID             uuid.UUID      `json:"id"`
-	Name           string         `json:"name"`
-	Slug           string         `json:"slug"`
-	LogoUrl        sql.NullString `json:"logo_url"`
-	PrimaryColor   sql.NullString `json:"primary_color"`
-	CreatedAt      time.Time      `json:"created_at"`
-	EditionTeamID  uuid.UUID      `json:"edition_team_id"`
-	Seed           sql.NullInt32  `json:"seed"`
-	FinalPlacement sql.NullInt32  `json:"final_placement"`
-	Wins           int32          `json:"wins"`
-	Losses         int32          `json:"losses"`
+	ID             pgtype.UUID        `json:"id"`
+	Name           string             `json:"name"`
+	Slug           string             `json:"slug"`
+	LogoUrl        *string            `json:"logo_url"`
+	PrimaryColor   *string            `json:"primary_color"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+	EditionTeamID  pgtype.UUID        `json:"edition_team_id"`
+	Seed           *int32             `json:"seed"`
+	FinalPlacement *int32             `json:"final_placement"`
+	Wins           int32              `json:"wins"`
+	Losses         int32              `json:"losses"`
 }
 
-func (q *Queries) ListTeamsByEdition(ctx context.Context, editionID uuid.UUID) ([]ListTeamsByEditionRow, error) {
-	rows, err := q.db.QueryContext(ctx, listTeamsByEdition, editionID)
+func (q *Queries) ListTeamsByEdition(ctx context.Context, editionID pgtype.UUID) ([]ListTeamsByEditionRow, error) {
+	rows, err := q.db.Query(ctx, listTeamsByEdition, editionID)
 	if err != nil {
 		return nil, err
 	}
@@ -159,9 +157,6 @@ func (q *Queries) ListTeamsByEdition(ctx context.Context, editionID uuid.UUID) (
 		}
 		items = append(items, i)
 	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
@@ -173,12 +168,12 @@ UPDATE edition_teams SET final_placement = $2 WHERE id = $1 RETURNING id, editio
 `
 
 type SetFinalPlacementParams struct {
-	ID             uuid.UUID     `json:"id"`
-	FinalPlacement sql.NullInt32 `json:"final_placement"`
+	ID             pgtype.UUID `json:"id"`
+	FinalPlacement *int32      `json:"final_placement"`
 }
 
 func (q *Queries) SetFinalPlacement(ctx context.Context, arg SetFinalPlacementParams) (EditionTeam, error) {
-	row := q.db.QueryRowContext(ctx, setFinalPlacement, arg.ID, arg.FinalPlacement)
+	row := q.db.QueryRow(ctx, setFinalPlacement, arg.ID, arg.FinalPlacement)
 	var i EditionTeam
 	err := row.Scan(
 		&i.ID,
@@ -201,13 +196,13 @@ RETURNING id, edition_id, team_id, seed, final_placement, wins, losses, created_
 `
 
 type UpdateEditionTeamStatsParams struct {
-	ID     uuid.UUID `json:"id"`
-	Wins   int32     `json:"wins"`
-	Losses int32     `json:"losses"`
+	ID     pgtype.UUID `json:"id"`
+	Wins   int32       `json:"wins"`
+	Losses int32       `json:"losses"`
 }
 
 func (q *Queries) UpdateEditionTeamStats(ctx context.Context, arg UpdateEditionTeamStatsParams) (EditionTeam, error) {
-	row := q.db.QueryRowContext(ctx, updateEditionTeamStats, arg.ID, arg.Wins, arg.Losses)
+	row := q.db.QueryRow(ctx, updateEditionTeamStats, arg.ID, arg.Wins, arg.Losses)
 	var i EditionTeam
 	err := row.Scan(
 		&i.ID,
@@ -227,14 +222,14 @@ UPDATE teams SET name = $2, logo_url = $3, primary_color = $4 WHERE id = $1 RETU
 `
 
 type UpdateTeamParams struct {
-	ID           uuid.UUID      `json:"id"`
-	Name         string         `json:"name"`
-	LogoUrl      sql.NullString `json:"logo_url"`
-	PrimaryColor sql.NullString `json:"primary_color"`
+	ID           pgtype.UUID `json:"id"`
+	Name         string      `json:"name"`
+	LogoUrl      *string     `json:"logo_url"`
+	PrimaryColor *string     `json:"primary_color"`
 }
 
 func (q *Queries) UpdateTeam(ctx context.Context, arg UpdateTeamParams) (Team, error) {
-	row := q.db.QueryRowContext(ctx, updateTeam,
+	row := q.db.QueryRow(ctx, updateTeam,
 		arg.ID,
 		arg.Name,
 		arg.LogoUrl,

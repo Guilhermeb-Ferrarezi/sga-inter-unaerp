@@ -5,107 +5,104 @@
 package db
 
 import (
-	"database/sql"
-	"time"
-
-	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Edition struct {
-	ID        uuid.UUID    `json:"id"`
-	GameID    uuid.UUID    `json:"game_id"`
-	Year      int32        `json:"year"`
-	Name      string       `json:"name"`
-	Status    string       `json:"status"`
-	StartedAt sql.NullTime `json:"started_at"`
-	EndedAt   sql.NullTime `json:"ended_at"`
-	CreatedAt time.Time    `json:"created_at"`
+	ID        pgtype.UUID        `json:"id"`
+	GameID    pgtype.UUID        `json:"game_id"`
+	Year      int32              `json:"year"`
+	Name      string             `json:"name"`
+	Status    string             `json:"status"`
+	StartedAt pgtype.Timestamptz `json:"started_at"`
+	EndedAt   pgtype.Timestamptz `json:"ended_at"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
 }
 
 type EditionTeam struct {
-	ID             uuid.UUID     `json:"id"`
-	EditionID      uuid.UUID     `json:"edition_id"`
-	TeamID         uuid.UUID     `json:"team_id"`
-	Seed           sql.NullInt32 `json:"seed"`
-	FinalPlacement sql.NullInt32 `json:"final_placement"`
-	Wins           int32         `json:"wins"`
-	Losses         int32         `json:"losses"`
-	CreatedAt      time.Time     `json:"created_at"`
+	ID             pgtype.UUID        `json:"id"`
+	EditionID      pgtype.UUID        `json:"edition_id"`
+	TeamID         pgtype.UUID        `json:"team_id"`
+	Seed           *int32             `json:"seed"`
+	FinalPlacement *int32             `json:"final_placement"`
+	Wins           int32              `json:"wins"`
+	Losses         int32              `json:"losses"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
 }
 
 type Game struct {
-	ID        uuid.UUID      `json:"id"`
-	Slug      string         `json:"slug"`
-	Name      string         `json:"name"`
-	CoverUrl  sql.NullString `json:"cover_url"`
-	Active    bool           `json:"active"`
-	CreatedAt time.Time      `json:"created_at"`
+	ID        pgtype.UUID        `json:"id"`
+	Slug      string             `json:"slug"`
+	Name      string             `json:"name"`
+	CoverUrl  *string            `json:"cover_url"`
+	Active    bool               `json:"active"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
 }
 
 type Highlight struct {
-	ID           uuid.UUID      `json:"id"`
-	EditionID    uuid.UUID      `json:"edition_id"`
-	MatchID      uuid.NullUUID  `json:"match_id"`
-	CfStreamID   string         `json:"cf_stream_id"`
-	Title        string         `json:"title"`
-	ThumbnailUrl sql.NullString `json:"thumbnail_url"`
-	PublishedAt  time.Time      `json:"published_at"`
+	ID           pgtype.UUID        `json:"id"`
+	EditionID    pgtype.UUID        `json:"edition_id"`
+	MatchID      pgtype.UUID        `json:"match_id"`
+	CfStreamID   string             `json:"cf_stream_id"`
+	Title        string             `json:"title"`
+	ThumbnailUrl *string            `json:"thumbnail_url"`
+	PublishedAt  pgtype.Timestamptz `json:"published_at"`
 }
 
 type Match struct {
-	ID          uuid.UUID    `json:"id"`
-	EditionID   uuid.UUID    `json:"edition_id"`
-	TeamAID     uuid.UUID    `json:"team_a_id"`
-	TeamBID     uuid.UUID    `json:"team_b_id"`
-	Round       string       `json:"round"`
-	ScheduledAt sql.NullTime `json:"scheduled_at"`
-	Status      string       `json:"status"`
-	CreatedAt   time.Time    `json:"created_at"`
+	ID          pgtype.UUID        `json:"id"`
+	EditionID   pgtype.UUID        `json:"edition_id"`
+	TeamAID     pgtype.UUID        `json:"team_a_id"`
+	TeamBID     pgtype.UUID        `json:"team_b_id"`
+	Round       string             `json:"round"`
+	ScheduledAt pgtype.Timestamptz `json:"scheduled_at"`
+	Status      string             `json:"status"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
 }
 
 type MatchResult struct {
-	ID       uuid.UUID      `json:"id"`
-	MatchID  uuid.UUID      `json:"match_id"`
-	WinnerID uuid.UUID      `json:"winner_id"`
-	Map      sql.NullString `json:"map"`
-	ScoreA   int32          `json:"score_a"`
-	ScoreB   int32          `json:"score_b"`
-	PlayedAt time.Time      `json:"played_at"`
+	ID       pgtype.UUID        `json:"id"`
+	MatchID  pgtype.UUID        `json:"match_id"`
+	WinnerID pgtype.UUID        `json:"winner_id"`
+	Map      *string            `json:"map"`
+	ScoreA   int32              `json:"score_a"`
+	ScoreB   int32              `json:"score_b"`
+	PlayedAt pgtype.Timestamptz `json:"played_at"`
 }
 
 type Medium struct {
-	ID        uuid.UUID      `json:"id"`
-	EditionID uuid.UUID      `json:"edition_id"`
-	MatchID   uuid.NullUUID  `json:"match_id"`
-	R2Key     string         `json:"r2_key"`
-	Url       string         `json:"url"`
-	Caption   sql.NullString `json:"caption"`
-	Type      string         `json:"type"`
-	CreatedAt time.Time      `json:"created_at"`
+	ID        pgtype.UUID        `json:"id"`
+	EditionID pgtype.UUID        `json:"edition_id"`
+	MatchID   pgtype.UUID        `json:"match_id"`
+	R2Key     string             `json:"r2_key"`
+	Url       string             `json:"url"`
+	Caption   *string            `json:"caption"`
+	Type      string             `json:"type"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
 }
 
 type Player struct {
-	ID        uuid.UUID      `json:"id"`
-	SgaUserID sql.NullInt32  `json:"sga_user_id"`
-	Ign       string         `json:"ign"`
-	AvatarUrl sql.NullString `json:"avatar_url"`
-	Role      sql.NullString `json:"role"`
-	CreatedAt time.Time      `json:"created_at"`
+	ID        pgtype.UUID        `json:"id"`
+	SgaUserID *int32             `json:"sga_user_id"`
+	Ign       string             `json:"ign"`
+	AvatarUrl *string            `json:"avatar_url"`
+	Role      *string            `json:"role"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
 }
 
 type Roster struct {
-	ID            uuid.UUID `json:"id"`
-	EditionTeamID uuid.UUID `json:"edition_team_id"`
-	PlayerID      uuid.UUID `json:"player_id"`
-	IsCaptain     bool      `json:"is_captain"`
-	CreatedAt     time.Time `json:"created_at"`
+	ID            pgtype.UUID        `json:"id"`
+	EditionTeamID pgtype.UUID        `json:"edition_team_id"`
+	PlayerID      pgtype.UUID        `json:"player_id"`
+	IsCaptain     bool               `json:"is_captain"`
+	CreatedAt     pgtype.Timestamptz `json:"created_at"`
 }
 
 type Team struct {
-	ID           uuid.UUID      `json:"id"`
-	Name         string         `json:"name"`
-	Slug         string         `json:"slug"`
-	LogoUrl      sql.NullString `json:"logo_url"`
-	PrimaryColor sql.NullString `json:"primary_color"`
-	CreatedAt    time.Time      `json:"created_at"`
+	ID           pgtype.UUID        `json:"id"`
+	Name         string             `json:"name"`
+	Slug         string             `json:"slug"`
+	LogoUrl      *string            `json:"logo_url"`
+	PrimaryColor *string            `json:"primary_color"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
 }

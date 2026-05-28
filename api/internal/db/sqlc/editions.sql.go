@@ -7,9 +7,8 @@ package db
 
 import (
 	"context"
-	"database/sql"
 
-	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createEdition = `-- name: CreateEdition :one
@@ -19,15 +18,15 @@ RETURNING id, game_id, year, name, status, started_at, ended_at, created_at
 `
 
 type CreateEditionParams struct {
-	GameID    uuid.UUID    `json:"game_id"`
-	Year      int32        `json:"year"`
-	Name      string       `json:"name"`
-	Status    string       `json:"status"`
-	StartedAt sql.NullTime `json:"started_at"`
+	GameID    pgtype.UUID        `json:"game_id"`
+	Year      int32              `json:"year"`
+	Name      string             `json:"name"`
+	Status    string             `json:"status"`
+	StartedAt pgtype.Timestamptz `json:"started_at"`
 }
 
 func (q *Queries) CreateEdition(ctx context.Context, arg CreateEditionParams) (Edition, error) {
-	row := q.db.QueryRowContext(ctx, createEdition,
+	row := q.db.QueryRow(ctx, createEdition,
 		arg.GameID,
 		arg.Year,
 		arg.Name,
@@ -57,7 +56,7 @@ LIMIT 1
 `
 
 func (q *Queries) GetActiveEdition(ctx context.Context, slug string) (Edition, error) {
-	row := q.db.QueryRowContext(ctx, getActiveEdition, slug)
+	row := q.db.QueryRow(ctx, getActiveEdition, slug)
 	var i Edition
 	err := row.Scan(
 		&i.ID,
@@ -76,8 +75,8 @@ const getEditionByID = `-- name: GetEditionByID :one
 SELECT id, game_id, year, name, status, started_at, ended_at, created_at FROM editions WHERE id = $1
 `
 
-func (q *Queries) GetEditionByID(ctx context.Context, id uuid.UUID) (Edition, error) {
-	row := q.db.QueryRowContext(ctx, getEditionByID, id)
+func (q *Queries) GetEditionByID(ctx context.Context, id pgtype.UUID) (Edition, error) {
+	row := q.db.QueryRow(ctx, getEditionByID, id)
 	var i Edition
 	err := row.Scan(
 		&i.ID,
@@ -96,8 +95,8 @@ const listEditionsByGame = `-- name: ListEditionsByGame :many
 SELECT id, game_id, year, name, status, started_at, ended_at, created_at FROM editions WHERE game_id = $1 ORDER BY year DESC
 `
 
-func (q *Queries) ListEditionsByGame(ctx context.Context, gameID uuid.UUID) ([]Edition, error) {
-	rows, err := q.db.QueryContext(ctx, listEditionsByGame, gameID)
+func (q *Queries) ListEditionsByGame(ctx context.Context, gameID pgtype.UUID) ([]Edition, error) {
+	rows, err := q.db.Query(ctx, listEditionsByGame, gameID)
 	if err != nil {
 		return nil, err
 	}
@@ -119,9 +118,6 @@ func (q *Queries) ListEditionsByGame(ctx context.Context, gameID uuid.UUID) ([]E
 		}
 		items = append(items, i)
 	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
@@ -133,13 +129,13 @@ UPDATE editions SET status = $2, ended_at = $3 WHERE id = $1 RETURNING id, game_
 `
 
 type UpdateEditionStatusParams struct {
-	ID      uuid.UUID    `json:"id"`
-	Status  string       `json:"status"`
-	EndedAt sql.NullTime `json:"ended_at"`
+	ID      pgtype.UUID        `json:"id"`
+	Status  string             `json:"status"`
+	EndedAt pgtype.Timestamptz `json:"ended_at"`
 }
 
 func (q *Queries) UpdateEditionStatus(ctx context.Context, arg UpdateEditionStatusParams) (Edition, error) {
-	row := q.db.QueryRowContext(ctx, updateEditionStatus, arg.ID, arg.Status, arg.EndedAt)
+	row := q.db.QueryRow(ctx, updateEditionStatus, arg.ID, arg.Status, arg.EndedAt)
 	var i Edition
 	err := row.Scan(
 		&i.ID,

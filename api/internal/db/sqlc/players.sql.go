@@ -7,10 +7,8 @@ package db
 
 import (
 	"context"
-	"database/sql"
-	"time"
 
-	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const addPlayerToRoster = `-- name: AddPlayerToRoster :one
@@ -20,13 +18,13 @@ RETURNING id, edition_team_id, player_id, is_captain, created_at
 `
 
 type AddPlayerToRosterParams struct {
-	EditionTeamID uuid.UUID `json:"edition_team_id"`
-	PlayerID      uuid.UUID `json:"player_id"`
-	IsCaptain     bool      `json:"is_captain"`
+	EditionTeamID pgtype.UUID `json:"edition_team_id"`
+	PlayerID      pgtype.UUID `json:"player_id"`
+	IsCaptain     bool        `json:"is_captain"`
 }
 
 func (q *Queries) AddPlayerToRoster(ctx context.Context, arg AddPlayerToRosterParams) (Roster, error) {
-	row := q.db.QueryRowContext(ctx, addPlayerToRoster, arg.EditionTeamID, arg.PlayerID, arg.IsCaptain)
+	row := q.db.QueryRow(ctx, addPlayerToRoster, arg.EditionTeamID, arg.PlayerID, arg.IsCaptain)
 	var i Roster
 	err := row.Scan(
 		&i.ID,
@@ -45,14 +43,14 @@ RETURNING id, sga_user_id, ign, avatar_url, role, created_at
 `
 
 type CreatePlayerParams struct {
-	SgaUserID sql.NullInt32  `json:"sga_user_id"`
-	Ign       string         `json:"ign"`
-	AvatarUrl sql.NullString `json:"avatar_url"`
-	Role      sql.NullString `json:"role"`
+	SgaUserID *int32  `json:"sga_user_id"`
+	Ign       string  `json:"ign"`
+	AvatarUrl *string `json:"avatar_url"`
+	Role      *string `json:"role"`
 }
 
 func (q *Queries) CreatePlayer(ctx context.Context, arg CreatePlayerParams) (Player, error) {
-	row := q.db.QueryRowContext(ctx, createPlayer,
+	row := q.db.QueryRow(ctx, createPlayer,
 		arg.SgaUserID,
 		arg.Ign,
 		arg.AvatarUrl,
@@ -74,8 +72,8 @@ const getPlayerByID = `-- name: GetPlayerByID :one
 SELECT id, sga_user_id, ign, avatar_url, role, created_at FROM players WHERE id = $1
 `
 
-func (q *Queries) GetPlayerByID(ctx context.Context, id uuid.UUID) (Player, error) {
-	row := q.db.QueryRowContext(ctx, getPlayerByID, id)
+func (q *Queries) GetPlayerByID(ctx context.Context, id pgtype.UUID) (Player, error) {
+	row := q.db.QueryRow(ctx, getPlayerByID, id)
 	var i Player
 	err := row.Scan(
 		&i.ID,
@@ -97,18 +95,18 @@ ORDER BY r.is_captain DESC, p.ign
 `
 
 type ListPlayersByEditionTeamRow struct {
-	ID            uuid.UUID      `json:"id"`
-	SgaUserID     sql.NullInt32  `json:"sga_user_id"`
-	Ign           string         `json:"ign"`
-	AvatarUrl     sql.NullString `json:"avatar_url"`
-	Role          sql.NullString `json:"role"`
-	CreatedAt     time.Time      `json:"created_at"`
-	IsCaptain     bool           `json:"is_captain"`
-	EditionTeamID uuid.UUID      `json:"edition_team_id"`
+	ID            pgtype.UUID        `json:"id"`
+	SgaUserID     *int32             `json:"sga_user_id"`
+	Ign           string             `json:"ign"`
+	AvatarUrl     *string            `json:"avatar_url"`
+	Role          *string            `json:"role"`
+	CreatedAt     pgtype.Timestamptz `json:"created_at"`
+	IsCaptain     bool               `json:"is_captain"`
+	EditionTeamID pgtype.UUID        `json:"edition_team_id"`
 }
 
-func (q *Queries) ListPlayersByEditionTeam(ctx context.Context, editionTeamID uuid.UUID) ([]ListPlayersByEditionTeamRow, error) {
-	rows, err := q.db.QueryContext(ctx, listPlayersByEditionTeam, editionTeamID)
+func (q *Queries) ListPlayersByEditionTeam(ctx context.Context, editionTeamID pgtype.UUID) ([]ListPlayersByEditionTeamRow, error) {
+	rows, err := q.db.Query(ctx, listPlayersByEditionTeam, editionTeamID)
 	if err != nil {
 		return nil, err
 	}
@@ -130,9 +128,6 @@ func (q *Queries) ListPlayersByEditionTeam(ctx context.Context, editionTeamID uu
 		}
 		items = append(items, i)
 	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
@@ -144,14 +139,14 @@ UPDATE players SET ign = $2, avatar_url = $3, role = $4 WHERE id = $1 RETURNING 
 `
 
 type UpdatePlayerParams struct {
-	ID        uuid.UUID      `json:"id"`
-	Ign       string         `json:"ign"`
-	AvatarUrl sql.NullString `json:"avatar_url"`
-	Role      sql.NullString `json:"role"`
+	ID        pgtype.UUID `json:"id"`
+	Ign       string      `json:"ign"`
+	AvatarUrl *string     `json:"avatar_url"`
+	Role      *string     `json:"role"`
 }
 
 func (q *Queries) UpdatePlayer(ctx context.Context, arg UpdatePlayerParams) (Player, error) {
-	row := q.db.QueryRowContext(ctx, updatePlayer,
+	row := q.db.QueryRow(ctx, updatePlayer,
 		arg.ID,
 		arg.Ign,
 		arg.AvatarUrl,

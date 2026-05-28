@@ -7,9 +7,8 @@ package db
 
 import (
 	"context"
-	"database/sql"
 
-	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createGame = `-- name: CreateGame :one
@@ -19,14 +18,14 @@ RETURNING id, slug, name, cover_url, active, created_at
 `
 
 type CreateGameParams struct {
-	Slug     string         `json:"slug"`
-	Name     string         `json:"name"`
-	CoverUrl sql.NullString `json:"cover_url"`
-	Active   bool           `json:"active"`
+	Slug     string  `json:"slug"`
+	Name     string  `json:"name"`
+	CoverUrl *string `json:"cover_url"`
+	Active   bool    `json:"active"`
 }
 
 func (q *Queries) CreateGame(ctx context.Context, arg CreateGameParams) (Game, error) {
-	row := q.db.QueryRowContext(ctx, createGame,
+	row := q.db.QueryRow(ctx, createGame,
 		arg.Slug,
 		arg.Name,
 		arg.CoverUrl,
@@ -49,7 +48,7 @@ SELECT id, slug, name, cover_url, active, created_at FROM games WHERE slug = $1
 `
 
 func (q *Queries) GetGameBySlug(ctx context.Context, slug string) (Game, error) {
-	row := q.db.QueryRowContext(ctx, getGameBySlug, slug)
+	row := q.db.QueryRow(ctx, getGameBySlug, slug)
 	var i Game
 	err := row.Scan(
 		&i.ID,
@@ -67,7 +66,7 @@ SELECT id, slug, name, cover_url, active, created_at FROM games ORDER BY name
 `
 
 func (q *Queries) ListGames(ctx context.Context) ([]Game, error) {
-	rows, err := q.db.QueryContext(ctx, listGames)
+	rows, err := q.db.Query(ctx, listGames)
 	if err != nil {
 		return nil, err
 	}
@@ -87,9 +86,6 @@ func (q *Queries) ListGames(ctx context.Context) ([]Game, error) {
 		}
 		items = append(items, i)
 	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
@@ -104,14 +100,14 @@ RETURNING id, slug, name, cover_url, active, created_at
 `
 
 type UpdateGameParams struct {
-	ID       uuid.UUID      `json:"id"`
-	Name     string         `json:"name"`
-	CoverUrl sql.NullString `json:"cover_url"`
-	Active   bool           `json:"active"`
+	ID       pgtype.UUID `json:"id"`
+	Name     string      `json:"name"`
+	CoverUrl *string     `json:"cover_url"`
+	Active   bool        `json:"active"`
 }
 
 func (q *Queries) UpdateGame(ctx context.Context, arg UpdateGameParams) (Game, error) {
-	row := q.db.QueryRowContext(ctx, updateGame,
+	row := q.db.QueryRow(ctx, updateGame,
 		arg.ID,
 		arg.Name,
 		arg.CoverUrl,
