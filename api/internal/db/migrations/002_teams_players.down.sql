@@ -1,0 +1,4 @@
+DROP TABLE IF EXISTS rosters;
+DROP TABLE IF EXISTS players;
+DROP TABLE IF EXISTS edition_teams;
+DROP TABLE IF EXISTS teams;
