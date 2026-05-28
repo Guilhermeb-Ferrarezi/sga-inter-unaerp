@@ -1,4 +1,30 @@
+# Env
 api/.env
+api/.env.local
 .env
+.env.local
+**/.env.local
+
+# Go
+api/vendor/
+api/*.exe
+api/*.test
+api/*.out
+
+# Node / Bun (future web/)
 node_modules/
+web/dist/
+web/.cache/
+bun.lock.bak
+
+# Docker
+pgdata/
+
+# Editor/OS
+.DS_Store
+*.swp
+.vscode/
+.idea/
+
+# Superpowers
 .superpowers/
