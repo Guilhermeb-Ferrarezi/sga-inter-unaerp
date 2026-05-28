@@ -12,15 +12,24 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as HighlightsRouteImport } from './routes/highlights'
 import { Route as GaleriaRouteImport } from './routes/galeria'
 import { Route as ClassificacaoRouteImport } from './routes/classificacao'
+import { Route as AdminRouteRouteImport } from './routes/admin/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as TimesIndexRouteImport } from './routes/times/index'
 import { Route as JogadoresIndexRouteImport } from './routes/jogadores/index'
 import { Route as EdicoesIndexRouteImport } from './routes/edicoes/index'
 import { Route as ConfrontosIndexRouteImport } from './routes/confrontos/index'
+import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as TimesSlugRouteImport } from './routes/times/$slug'
 import { Route as JogadoresIdRouteImport } from './routes/jogadores/$id'
 import { Route as EdicoesYearRouteImport } from './routes/edicoes/$year'
 import { Route as ConfrontosIdRouteImport } from './routes/confrontos/$id'
+import { Route as AdminTimesRouteImport } from './routes/admin/times'
+import { Route as AdminMidiaRouteImport } from './routes/admin/midia'
+import { Route as AdminJogadoresRouteImport } from './routes/admin/jogadores'
+import { Route as AdminImportarRouteImport } from './routes/admin/importar'
+import { Route as AdminHighlightsRouteImport } from './routes/admin/highlights'
+import { Route as AdminEdicoesRouteImport } from './routes/admin/edicoes'
+import { Route as AdminConfrontosRouteImport } from './routes/admin/confrontos'
 
 const HighlightsRoute = HighlightsRouteImport.update({
   id: '/highlights',
@@ -35,6 +44,11 @@ const GaleriaRoute = GaleriaRouteImport.update({
 const ClassificacaoRoute = ClassificacaoRouteImport.update({
   id: '/classificacao',
   path: '/classificacao',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRouteRoute = AdminRouteRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -62,6 +76,11 @@ const ConfrontosIndexRoute = ConfrontosIndexRouteImport.update({
   path: '/confrontos/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
 const TimesSlugRoute = TimesSlugRouteImport.update({
   id: '/times/$slug',
   path: '/times/$slug',
@@ -82,16 +101,60 @@ const ConfrontosIdRoute = ConfrontosIdRouteImport.update({
   path: '/confrontos/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminTimesRoute = AdminTimesRouteImport.update({
+  id: '/times',
+  path: '/times',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminMidiaRoute = AdminMidiaRouteImport.update({
+  id: '/midia',
+  path: '/midia',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminJogadoresRoute = AdminJogadoresRouteImport.update({
+  id: '/jogadores',
+  path: '/jogadores',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminImportarRoute = AdminImportarRouteImport.update({
+  id: '/importar',
+  path: '/importar',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminHighlightsRoute = AdminHighlightsRouteImport.update({
+  id: '/highlights',
+  path: '/highlights',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminEdicoesRoute = AdminEdicoesRouteImport.update({
+  id: '/edicoes',
+  path: '/edicoes',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminConfrontosRoute = AdminConfrontosRouteImport.update({
+  id: '/confrontos',
+  path: '/confrontos',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteRouteWithChildren
   '/classificacao': typeof ClassificacaoRoute
   '/galeria': typeof GaleriaRoute
   '/highlights': typeof HighlightsRoute
+  '/admin/confrontos': typeof AdminConfrontosRoute
+  '/admin/edicoes': typeof AdminEdicoesRoute
+  '/admin/highlights': typeof AdminHighlightsRoute
+  '/admin/importar': typeof AdminImportarRoute
+  '/admin/jogadores': typeof AdminJogadoresRoute
+  '/admin/midia': typeof AdminMidiaRoute
+  '/admin/times': typeof AdminTimesRoute
   '/confrontos/$id': typeof ConfrontosIdRoute
   '/edicoes/$year': typeof EdicoesYearRoute
   '/jogadores/$id': typeof JogadoresIdRoute
   '/times/$slug': typeof TimesSlugRoute
+  '/admin/': typeof AdminIndexRoute
   '/confrontos/': typeof ConfrontosIndexRoute
   '/edicoes/': typeof EdicoesIndexRoute
   '/jogadores/': typeof JogadoresIndexRoute
@@ -102,10 +165,18 @@ export interface FileRoutesByTo {
   '/classificacao': typeof ClassificacaoRoute
   '/galeria': typeof GaleriaRoute
   '/highlights': typeof HighlightsRoute
+  '/admin/confrontos': typeof AdminConfrontosRoute
+  '/admin/edicoes': typeof AdminEdicoesRoute
+  '/admin/highlights': typeof AdminHighlightsRoute
+  '/admin/importar': typeof AdminImportarRoute
+  '/admin/jogadores': typeof AdminJogadoresRoute
+  '/admin/midia': typeof AdminMidiaRoute
+  '/admin/times': typeof AdminTimesRoute
   '/confrontos/$id': typeof ConfrontosIdRoute
   '/edicoes/$year': typeof EdicoesYearRoute
   '/jogadores/$id': typeof JogadoresIdRoute
   '/times/$slug': typeof TimesSlugRoute
+  '/admin': typeof AdminIndexRoute
   '/confrontos': typeof ConfrontosIndexRoute
   '/edicoes': typeof EdicoesIndexRoute
   '/jogadores': typeof JogadoresIndexRoute
@@ -114,13 +185,22 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteRouteWithChildren
   '/classificacao': typeof ClassificacaoRoute
   '/galeria': typeof GaleriaRoute
   '/highlights': typeof HighlightsRoute
+  '/admin/confrontos': typeof AdminConfrontosRoute
+  '/admin/edicoes': typeof AdminEdicoesRoute
+  '/admin/highlights': typeof AdminHighlightsRoute
+  '/admin/importar': typeof AdminImportarRoute
+  '/admin/jogadores': typeof AdminJogadoresRoute
+  '/admin/midia': typeof AdminMidiaRoute
+  '/admin/times': typeof AdminTimesRoute
   '/confrontos/$id': typeof ConfrontosIdRoute
   '/edicoes/$year': typeof EdicoesYearRoute
   '/jogadores/$id': typeof JogadoresIdRoute
   '/times/$slug': typeof TimesSlugRoute
+  '/admin/': typeof AdminIndexRoute
   '/confrontos/': typeof ConfrontosIndexRoute
   '/edicoes/': typeof EdicoesIndexRoute
   '/jogadores/': typeof JogadoresIndexRoute
@@ -130,13 +210,22 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
     | '/classificacao'
     | '/galeria'
     | '/highlights'
+    | '/admin/confrontos'
+    | '/admin/edicoes'
+    | '/admin/highlights'
+    | '/admin/importar'
+    | '/admin/jogadores'
+    | '/admin/midia'
+    | '/admin/times'
     | '/confrontos/$id'
     | '/edicoes/$year'
     | '/jogadores/$id'
     | '/times/$slug'
+    | '/admin/'
     | '/confrontos/'
     | '/edicoes/'
     | '/jogadores/'
@@ -147,10 +236,18 @@ export interface FileRouteTypes {
     | '/classificacao'
     | '/galeria'
     | '/highlights'
+    | '/admin/confrontos'
+    | '/admin/edicoes'
+    | '/admin/highlights'
+    | '/admin/importar'
+    | '/admin/jogadores'
+    | '/admin/midia'
+    | '/admin/times'
     | '/confrontos/$id'
     | '/edicoes/$year'
     | '/jogadores/$id'
     | '/times/$slug'
+    | '/admin'
     | '/confrontos'
     | '/edicoes'
     | '/jogadores'
@@ -158,13 +255,22 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/admin'
     | '/classificacao'
     | '/galeria'
     | '/highlights'
+    | '/admin/confrontos'
+    | '/admin/edicoes'
+    | '/admin/highlights'
+    | '/admin/importar'
+    | '/admin/jogadores'
+    | '/admin/midia'
+    | '/admin/times'
     | '/confrontos/$id'
     | '/edicoes/$year'
     | '/jogadores/$id'
     | '/times/$slug'
+    | '/admin/'
     | '/confrontos/'
     | '/edicoes/'
     | '/jogadores/'
@@ -173,6 +279,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRouteRoute: typeof AdminRouteRouteWithChildren
   ClassificacaoRoute: typeof ClassificacaoRoute
   GaleriaRoute: typeof GaleriaRoute
   HighlightsRoute: typeof HighlightsRoute
@@ -207,6 +314,13 @@ declare module '@tanstack/react-router' {
       path: '/classificacao'
       fullPath: '/classificacao'
       preLoaderRoute: typeof ClassificacaoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -244,6 +358,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ConfrontosIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
     '/times/$slug': {
       id: '/times/$slug'
       path: '/times/$slug'
@@ -272,11 +393,87 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ConfrontosIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/times': {
+      id: '/admin/times'
+      path: '/times'
+      fullPath: '/admin/times'
+      preLoaderRoute: typeof AdminTimesRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/midia': {
+      id: '/admin/midia'
+      path: '/midia'
+      fullPath: '/admin/midia'
+      preLoaderRoute: typeof AdminMidiaRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/jogadores': {
+      id: '/admin/jogadores'
+      path: '/jogadores'
+      fullPath: '/admin/jogadores'
+      preLoaderRoute: typeof AdminJogadoresRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/importar': {
+      id: '/admin/importar'
+      path: '/importar'
+      fullPath: '/admin/importar'
+      preLoaderRoute: typeof AdminImportarRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/highlights': {
+      id: '/admin/highlights'
+      path: '/highlights'
+      fullPath: '/admin/highlights'
+      preLoaderRoute: typeof AdminHighlightsRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/edicoes': {
+      id: '/admin/edicoes'
+      path: '/edicoes'
+      fullPath: '/admin/edicoes'
+      preLoaderRoute: typeof AdminEdicoesRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/confrontos': {
+      id: '/admin/confrontos'
+      path: '/confrontos'
+      fullPath: '/admin/confrontos'
+      preLoaderRoute: typeof AdminConfrontosRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
   }
 }
 
+interface AdminRouteRouteChildren {
+  AdminConfrontosRoute: typeof AdminConfrontosRoute
+  AdminEdicoesRoute: typeof AdminEdicoesRoute
+  AdminHighlightsRoute: typeof AdminHighlightsRoute
+  AdminImportarRoute: typeof AdminImportarRoute
+  AdminJogadoresRoute: typeof AdminJogadoresRoute
+  AdminMidiaRoute: typeof AdminMidiaRoute
+  AdminTimesRoute: typeof AdminTimesRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteRouteChildren: AdminRouteRouteChildren = {
+  AdminConfrontosRoute: AdminConfrontosRoute,
+  AdminEdicoesRoute: AdminEdicoesRoute,
+  AdminHighlightsRoute: AdminHighlightsRoute,
+  AdminImportarRoute: AdminImportarRoute,
+  AdminJogadoresRoute: AdminJogadoresRoute,
+  AdminMidiaRoute: AdminMidiaRoute,
+  AdminTimesRoute: AdminTimesRoute,
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteRouteWithChildren = AdminRouteRoute._addFileChildren(
+  AdminRouteRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRouteRoute: AdminRouteRouteWithChildren,
   ClassificacaoRoute: ClassificacaoRoute,
   GaleriaRoute: GaleriaRoute,
   HighlightsRoute: HighlightsRoute,
