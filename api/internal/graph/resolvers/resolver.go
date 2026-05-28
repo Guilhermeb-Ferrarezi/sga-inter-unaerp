@@ -18,4 +18,5 @@ type Resolver struct {
 	Redis  *redis.Client
 	Config *config.Config
 	R2     *storage.R2Client
+	Stream *storage.StreamClient
 }

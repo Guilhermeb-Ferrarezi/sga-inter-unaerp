@@ -43,12 +43,15 @@ func main() {
 		cfg.CFR2PublicURL,
 	)
 
+	streamClient := storage.NewStream(cfg.CFAccountID, cfg.CFStreamToken)
+
 	resolver := &resolvers.Resolver{
 		DB:     queries,
 		Pool:   pool,
 		Redis:  redisClient.Underlying(),
 		Config: cfg,
 		R2:     r2Client,
+		Stream: streamClient,
 	}
 
 	schema := generated.NewExecutableSchema(generated.Config{Resolvers: resolver})
