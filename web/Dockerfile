@@ -1,5 +1,5 @@
 # ──────────── Build stage ────────────
-FROM oven/bun:1.3-alpine AS build
+FROM oven/bun:1.3 AS build
 WORKDIR /app
 
 COPY package.json bun.lock ./
@@ -14,7 +14,6 @@ ENV VITE_GRAPHQL_URL=${VITE_GRAPHQL_URL}
 ENV VITE_SGA_AUTH_URL=${VITE_SGA_AUTH_URL}
 ENV VITE_CF_STREAM_BASE=${VITE_CF_STREAM_BASE}
 
-# Pula tests durante build (CI separado)
 RUN bun run build
 
 # ──────────── Runtime stage ────────────
