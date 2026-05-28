@@ -4,5 +4,6 @@
 .git
 .gitignore
 README.md
-internal/db/seed/
-cmd/seed/
+# Binários locais
+/api
+/seed
