@@ -14,80 +14,425 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	db "github.com/sg/unaerp-api/internal/db/sqlc"
 	"github.com/sg/unaerp-api/internal/graph/generated"
 	"github.com/sg/unaerp-api/internal/graph/model"
+	"github.com/sg/unaerp-api/internal/middleware"
 )
+
+// ---- auth helper ----
+
+var errUnauthorized = errors.New("autenticação necessária")
+
+func requireAuth(ctx context.Context) error {
+	if middleware.UserFromContext(ctx) == nil {
+		return errUnauthorized
+	}
+	return nil
+}
+
+// ---- Mutation resolvers ----
 
 // CreateGame is the resolver for the createGame field.
 func (r *mutationResolver) CreateGame(ctx context.Context, slug string, name string, coverURL *string) (*model.Game, error) {
-	panic(fmt.Errorf("not implemented: CreateGame - createGame"))
+	if err := requireAuth(ctx); err != nil {
+		return nil, err
+	}
+	g, err := r.DB.CreateGame(ctx, db.CreateGameParams{
+		Slug:     slug,
+		Name:     name,
+		CoverUrl: coverURL,
+		Active:   true,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return gameToModel(g), nil
 }
 
 // CreateEdition is the resolver for the createEdition field.
 func (r *mutationResolver) CreateEdition(ctx context.Context, gameID uuid.UUID, year int, name string) (*model.Edition, error) {
-	panic(fmt.Errorf("not implemented: CreateEdition - createEdition"))
+	if err := requireAuth(ctx); err != nil {
+		return nil, err
+	}
+	e, err := r.DB.CreateEdition(ctx, db.CreateEditionParams{
+		GameID:    gameID,
+		Year:      int32(year),
+		Name:      name,
+		Status:    "draft",
+		StartedAt: pgtype.Timestamptz{Valid: false},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// No GetGameByID sqlc query — build minimal game reference with only the ID.
+	gameModel := &model.Game{ID: e.GameID}
+
+	return editionToModel(e, gameModel), nil
 }
 
 // UpdateEditionStatus is the resolver for the updateEditionStatus field.
+// Cache note: active_edition:{gameSlug} will expire via TTL (30s) — we don't
+// have GetGameByID to look up the slug efficiently here, so we rely on TTL.
 func (r *mutationResolver) UpdateEditionStatus(ctx context.Context, id uuid.UUID, status string) (*model.Edition, error) {
-	panic(fmt.Errorf("not implemented: UpdateEditionStatus - updateEditionStatus"))
+	if err := requireAuth(ctx); err != nil {
+		return nil, err
+	}
+
+	// Set ended_at only when finishing
+	var endedAt pgtype.Timestamptz
+	if status == "finished" {
+		endedAt = pgtype.Timestamptz{Time: time.Now(), Valid: true}
+	}
+
+	e, err := r.DB.UpdateEditionStatus(ctx, db.UpdateEditionStatusParams{
+		ID:      id,
+		Status:  status,
+		EndedAt: endedAt,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	gameModel := &model.Game{ID: e.GameID}
+	return editionToModel(e, gameModel), nil
 }
 
 // CreateTeam is the resolver for the createTeam field.
 func (r *mutationResolver) CreateTeam(ctx context.Context, name string, slug string, logoURL *string, primaryColor *string) (*model.Team, error) {
-	panic(fmt.Errorf("not implemented: CreateTeam - createTeam"))
+	if err := requireAuth(ctx); err != nil {
+		return nil, err
+	}
+	t, err := r.DB.CreateTeam(ctx, db.CreateTeamParams{
+		Name:         name,
+		Slug:         slug,
+		LogoUrl:      logoURL,
+		PrimaryColor: primaryColor,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return teamToModel(t), nil
 }
 
 // UpdateTeam is the resolver for the updateTeam field.
 func (r *mutationResolver) UpdateTeam(ctx context.Context, id uuid.UUID, name string, logoURL *string, primaryColor *string) (*model.Team, error) {
-	panic(fmt.Errorf("not implemented: UpdateTeam - updateTeam"))
+	if err := requireAuth(ctx); err != nil {
+		return nil, err
+	}
+	t, err := r.DB.UpdateTeam(ctx, db.UpdateTeamParams{
+		ID:           id,
+		Name:         name,
+		LogoUrl:      logoURL,
+		PrimaryColor: primaryColor,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return teamToModel(t), nil
 }
 
 // AddTeamToEdition is the resolver for the addTeamToEdition field.
 func (r *mutationResolver) AddTeamToEdition(ctx context.Context, editionID uuid.UUID, teamID uuid.UUID, seed *int) (*model.EditionTeam, error) {
-	panic(fmt.Errorf("not implemented: AddTeamToEdition - addTeamToEdition"))
+	if err := requireAuth(ctx); err != nil {
+		return nil, err
+	}
+
+	var seedI32 *int32
+	if seed != nil {
+		v := int32(*seed)
+		seedI32 = &v
+	}
+
+	et, err := r.DB.AddTeamToEdition(ctx, db.AddTeamToEditionParams{
+		EditionID: editionID,
+		TeamID:    teamID,
+		Seed:      seedI32,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// invalidate standings cache
+	if r.Redis != nil {
+		_ = r.Redis.Del(ctx, fmt.Sprintf("standings:%s", editionID))
+	}
+
+	// fetch edition and team for nested fields
+	e, err := r.DB.GetEditionByID(ctx, editionID)
+	if err != nil {
+		return nil, err
+	}
+	editionModel := editionToModel(e, &model.Game{ID: e.GameID})
+
+	// No GetTeamByID sqlc query — build stub Team with ID only.
+	teamModel := &model.Team{ID: et.TeamID}
+
+	return &model.EditionTeam{
+		ID:             et.ID,
+		Team:           teamModel,
+		Edition:        editionModel,
+		Seed:           int32PtrToIntPtr(et.Seed),
+		FinalPlacement: int32PtrToIntPtr(et.FinalPlacement),
+		Wins:           int(et.Wins),
+		Losses:         int(et.Losses),
+		Roster:         []*model.RosterEntry{},
+	}, nil
 }
 
 // CreatePlayer is the resolver for the createPlayer field.
 func (r *mutationResolver) CreatePlayer(ctx context.Context, ign string, sgaUserID *int, avatarURL *string, role *string) (*model.Player, error) {
-	panic(fmt.Errorf("not implemented: CreatePlayer - createPlayer"))
+	if err := requireAuth(ctx); err != nil {
+		return nil, err
+	}
+
+	var sgaID *int32
+	if sgaUserID != nil {
+		v := int32(*sgaUserID)
+		sgaID = &v
+	}
+
+	p, err := r.DB.CreatePlayer(ctx, db.CreatePlayerParams{
+		SgaUserID: sgaID,
+		Ign:       ign,
+		AvatarUrl: avatarURL,
+		Role:      role,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return playerToModel(p), nil
 }
 
 // AddPlayerToRoster is the resolver for the addPlayerToRoster field.
 func (r *mutationResolver) AddPlayerToRoster(ctx context.Context, editionTeamID uuid.UUID, playerID uuid.UUID, isCaptain *bool) (*model.RosterEntry, error) {
-	panic(fmt.Errorf("not implemented: AddPlayerToRoster - addPlayerToRoster"))
+	if err := requireAuth(ctx); err != nil {
+		return nil, err
+	}
+
+	captain := false
+	if isCaptain != nil {
+		captain = *isCaptain
+	}
+
+	_, err := r.DB.AddPlayerToRoster(ctx, db.AddPlayerToRosterParams{
+		EditionTeamID: editionTeamID,
+		PlayerID:      playerID,
+		IsCaptain:     captain,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// fetch player for nested field
+	p, err := r.DB.GetPlayerByID(ctx, playerID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.RosterEntry{
+		Player:    playerToModel(p),
+		IsCaptain: captain,
+	}, nil
 }
 
 // CreateMatch is the resolver for the createMatch field.
 func (r *mutationResolver) CreateMatch(ctx context.Context, editionID uuid.UUID, teamAId uuid.UUID, teamBId uuid.UUID, round string, scheduledAt *time.Time) (*model.Match, error) {
-	panic(fmt.Errorf("not implemented: CreateMatch - createMatch"))
+	if err := requireAuth(ctx); err != nil {
+		return nil, err
+	}
+
+	var scheduledTS pgtype.Timestamptz
+	if scheduledAt != nil {
+		scheduledTS = pgtype.Timestamptz{Time: *scheduledAt, Valid: true}
+	}
+
+	m, err := r.DB.CreateMatch(ctx, db.CreateMatchParams{
+		EditionID:   editionID,
+		TeamAID:     teamAId,
+		TeamBID:     teamBId,
+		Round:       round,
+		ScheduledAt: scheduledTS,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	e, err := r.DB.GetEditionByID(ctx, editionID)
+	if err != nil {
+		return nil, err
+	}
+	editionModel := editionToModel(e, &model.Game{ID: e.GameID})
+
+	// Stub edition teams with IDs only — full eager load not needed here
+	teamA := &model.EditionTeam{ID: teamAId}
+	teamB := &model.EditionTeam{ID: teamBId}
+
+	return &model.Match{
+		ID:          m.ID,
+		Edition:     editionModel,
+		TeamA:       teamA,
+		TeamB:       teamB,
+		Round:       m.Round,
+		ScheduledAt: tsToPtr(m.ScheduledAt),
+		Status:      m.Status,
+		Result:      nil,
+	}, nil
 }
 
 // RecordResult is the resolver for the recordResult field.
 func (r *mutationResolver) RecordResult(ctx context.Context, matchID uuid.UUID, winnerID uuid.UUID, mapArg *string, scoreA int, scoreB int) (*model.MatchResult, error) {
-	panic(fmt.Errorf("not implemented: RecordResult - recordResult"))
+	if err := requireAuth(ctx); err != nil {
+		return nil, err
+	}
+
+	tx, err := r.Pool.Begin(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback(ctx)
+
+	qtx := r.DB.WithTx(tx)
+
+	// 1. Insert match result
+	result, err := qtx.RecordMatchResult(ctx, db.RecordMatchResultParams{
+		MatchID:  matchID,
+		WinnerID: winnerID,
+		Map:      mapArg,
+		ScoreA:   int32(scoreA),
+		ScoreB:   int32(scoreB),
+		PlayedAt: pgtype.Timestamptz{Time: time.Now(), Valid: true},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// 2. Update match status to done
+	_, err = qtx.UpdateMatchStatus(ctx, db.UpdateMatchStatusParams{
+		ID:     matchID,
+		Status: "done",
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// 3. Get match details to know edition_id and team edition_team IDs
+	// We need edition_team IDs for UpdateEditionTeamStats.
+	// ListTeamsByEdition returns edition_team_id mapped to team_id.
+	match, err := qtx.GetMatchByID(ctx, matchID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 4. Find edition_team rows for teamA and teamB
+	teamRows, err := qtx.ListTeamsByEdition(ctx, match.EditionID)
+	if err != nil {
+		return nil, err
+	}
+
+	var teamAEditionTeamID, teamBEditionTeamID uuid.UUID
+	for _, tr := range teamRows {
+		if tr.ID == match.TeamAID {
+			teamAEditionTeamID = tr.EditionTeamID
+		}
+		if tr.ID == match.TeamBID {
+			teamBEditionTeamID = tr.EditionTeamID
+		}
+	}
+
+	// 5. Determine wins/losses increments
+	winnerIsTeamA := winnerID == match.TeamAID
+	aWins, aLosses := int32(0), int32(1)
+	bWins, bLosses := int32(1), int32(0)
+	if winnerIsTeamA {
+		aWins, aLosses = 1, 0
+		bWins, bLosses = 0, 1
+	}
+
+	_, err = qtx.UpdateEditionTeamStats(ctx, db.UpdateEditionTeamStatsParams{
+		ID:     teamAEditionTeamID,
+		Wins:   aWins,
+		Losses: aLosses,
+	})
+	if err != nil {
+		return nil, err
+	}
+	_, err = qtx.UpdateEditionTeamStats(ctx, db.UpdateEditionTeamStatsParams{
+		ID:     teamBEditionTeamID,
+		Wins:   bWins,
+		Losses: bLosses,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, err
+	}
+
+	// invalidate standings cache (outside transaction)
+	if r.Redis != nil {
+		_ = r.Redis.Del(ctx, fmt.Sprintf("standings:%s", match.EditionID))
+	}
+
+	// build winner EditionTeam stub with ID only
+	winner := &model.EditionTeam{ID: winnerID}
+
+	return &model.MatchResult{
+		ID:       result.ID,
+		Winner:   winner,
+		Map:      result.Map,
+		ScoreA:   int(result.ScoreA),
+		ScoreB:   int(result.ScoreB),
+		PlayedAt: tsToTime(result.PlayedAt),
+	}, nil
 }
 
 // UploadMediaPresignedURL is the resolver for the uploadMediaPresignedUrl field.
 func (r *mutationResolver) UploadMediaPresignedURL(ctx context.Context, editionID uuid.UUID, matchID *uuid.UUID, fileType string, mediaType string) (*model.PresignedUpload, error) {
-	panic(fmt.Errorf("not implemented: UploadMediaPresignedURL - uploadMediaPresignedUrl"))
+	return nil, errors.New("não implementado — task 9")
 }
 
 // ConfirmMediaUpload is the resolver for the confirmMediaUpload field.
 func (r *mutationResolver) ConfirmMediaUpload(ctx context.Context, editionID uuid.UUID, matchID *uuid.UUID, r2Key string, url string, caption *string, mediaType string) (*model.Media, error) {
-	panic(fmt.Errorf("not implemented: ConfirmMediaUpload - confirmMediaUpload"))
+	return nil, errors.New("não implementado — task 9")
 }
 
 // CreateHighlight is the resolver for the createHighlight field.
 func (r *mutationResolver) CreateHighlight(ctx context.Context, editionID uuid.UUID, matchID *uuid.UUID, cfStreamID string, title string, thumbnailURL *string) (*model.Highlight, error) {
-	panic(fmt.Errorf("not implemented: CreateHighlight - createHighlight"))
+	if err := requireAuth(ctx); err != nil {
+		return nil, err
+	}
+
+	h, err := r.DB.CreateHighlight(ctx, db.CreateHighlightParams{
+		EditionID:    editionID,
+		MatchID:      matchID,
+		CfStreamID:   cfStreamID,
+		Title:        title,
+		ThumbnailUrl: thumbnailURL,
+		PublishedAt:  pgtype.Timestamptz{Time: time.Now(), Valid: true},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	e, err := r.DB.GetEditionByID(ctx, editionID)
+	if err != nil {
+		return nil, err
+	}
+	editionModel := editionToModel(e, &model.Game{ID: e.GameID})
+
+	return highlightToModel(h, editionModel), nil
 }
 
 // ImportEdition is the resolver for the importEdition field.
 func (r *mutationResolver) ImportEdition(ctx context.Context, payload string) (bool, error) {
-	panic(fmt.Errorf("not implemented: ImportEdition - importEdition"))
+	return false, errors.New("não implementado — task 12")
 }
+
+// ---- Query resolvers ----
 
 // Games is the resolver for the games field.
 func (r *queryResolver) Games(ctx context.Context) ([]*model.Game, error) {
