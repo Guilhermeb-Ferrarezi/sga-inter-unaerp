@@ -4,7 +4,7 @@ import react from "@vitejs/plugin-react";
 import { TanStackRouterVite } from "@tanstack/router-plugin/vite";
 
 // Sob /inter-unaerp por padrão; pode trocar via VITE_BASE_PATH (ex: "/" para dev)
-const BASE = process.env.VITE_BASE_PATH ?? "/inter-unaerp/";
+const BASE = process.env.VITE_BASE_PATH ?? "/universitarios/inter-unaerp/";
 
 export default defineConfig({
   base: BASE,
