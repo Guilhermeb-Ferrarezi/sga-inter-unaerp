@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"log"
-	"strings"
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
@@ -59,39 +58,35 @@ func main() {
 	gqlHandler := handler.NewDefaultServer(schema)
 
 	r := gin.Default()
-
-	// Aceita também requests vindas do reverse proxy do santos-games.com
-	// sob o path /universitarios/inter-unaerp/api/* — strippa o prefixo
-	// antes do roteamento.
-	const apiPrefix = "/universitarios/inter-unaerp/api"
-	r.Use(func(c *gin.Context) {
-		if strings.HasPrefix(c.Request.URL.Path, apiPrefix) {
-			c.Request.URL.Path = strings.TrimPrefix(c.Request.URL.Path, apiPrefix)
-			if c.Request.URL.Path == "" {
-				c.Request.URL.Path = "/"
-			}
-		}
-		c.Next()
-	})
-
 	r.Use(middleware.CORS(cfg.CORSOrigins))
 	r.Use(middleware.Auth(cfg.JWTSecret))
 
-	r.GET("/health", func(c *gin.Context) {
-		c.JSON(200, gin.H{"status": "ok"})
-	})
+	// Helper que registra todas as rotas num grupo (acesso via prefix e direto)
+	mountRoutes := func(rg gin.IRoutes) {
+		rg.GET("/health", func(c *gin.Context) {
+			c.JSON(200, gin.H{"status": "ok"})
+		})
 
-	r.POST("/graphql", func(c *gin.Context) {
-		gqlHandler.ServeHTTP(c.Writer, c.Request)
-	})
-
-	if cfg.IsDev() {
-		r.GET("/graphql", func(c *gin.Context) {
+		rg.POST("/graphql", func(c *gin.Context) {
 			gqlHandler.ServeHTTP(c.Writer, c.Request)
 		})
-		r.GET("/playground", func(c *gin.Context) {
-			playground.Handler("Inter UnaERP", "/graphql").ServeHTTP(c.Writer, c.Request)
-		})
+
+		if cfg.IsDev() {
+			rg.GET("/graphql", func(c *gin.Context) {
+				gqlHandler.ServeHTTP(c.Writer, c.Request)
+			})
+			rg.GET("/playground", func(c *gin.Context) {
+				playground.Handler("Inter UnaERP", "/graphql").ServeHTTP(c.Writer, c.Request)
+			})
+		}
+	}
+
+	// Rotas direto na raiz (acesso via easypanel.host)
+	mountRoutes(r)
+	// Mesmas rotas sob o prefixo do reverse proxy do santos-games.com
+	mountRoutes(r.Group("/universitarios/inter-unaerp/api"))
+
+	if cfg.IsDev() {
 		log.Printf("Playground habilitado em /playground (APP_ENV=%s)", cfg.Env)
 	}
 
