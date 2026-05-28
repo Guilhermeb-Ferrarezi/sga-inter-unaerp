@@ -318,31 +318,15 @@ func (r *mutationResolver) RecordResult(ctx context.Context, matchID uuid.UUID, 
 		return nil, err
 	}
 
-	// 3. Get match details to know edition_id and team edition_team IDs
-	// We need edition_team IDs for UpdateEditionTeamStats.
-	// ListTeamsByEdition returns edition_team_id mapped to team_id.
+	// 3. Get match details for edition_id (cache invalidation) and team IDs.
+	// match.TeamAID / TeamBID are FKs to edition_teams.id — they are already edition_team_ids.
 	match, err := qtx.GetMatchByID(ctx, matchID)
 	if err != nil {
 		return nil, err
 	}
 
-	// 4. Find edition_team rows for teamA and teamB
-	teamRows, err := qtx.ListTeamsByEdition(ctx, match.EditionID)
-	if err != nil {
-		return nil, err
-	}
-
-	var teamAEditionTeamID, teamBEditionTeamID uuid.UUID
-	for _, tr := range teamRows {
-		if tr.ID == match.TeamAID {
-			teamAEditionTeamID = tr.EditionTeamID
-		}
-		if tr.ID == match.TeamBID {
-			teamBEditionTeamID = tr.EditionTeamID
-		}
-	}
-
-	// 5. Determine wins/losses increments
+	// 4. Determine wins/losses increments.
+	// winnerID is also an edition_team_id, so compare directly against match.TeamAID.
 	winnerIsTeamA := winnerID == match.TeamAID
 	aWins, aLosses := int32(0), int32(1)
 	bWins, bLosses := int32(1), int32(0)
@@ -352,7 +336,7 @@ func (r *mutationResolver) RecordResult(ctx context.Context, matchID uuid.UUID, 
 	}
 
 	_, err = qtx.UpdateEditionTeamStats(ctx, db.UpdateEditionTeamStatsParams{
-		ID:     teamAEditionTeamID,
+		ID:     match.TeamAID,
 		Wins:   aWins,
 		Losses: aLosses,
 	})
@@ -360,7 +344,7 @@ func (r *mutationResolver) RecordResult(ctx context.Context, matchID uuid.UUID, 
 		return nil, err
 	}
 	_, err = qtx.UpdateEditionTeamStats(ctx, db.UpdateEditionTeamStatsParams{
-		ID:     teamBEditionTeamID,
+		ID:     match.TeamBID,
 		Wins:   bWins,
 		Losses: bLosses,
 	})
