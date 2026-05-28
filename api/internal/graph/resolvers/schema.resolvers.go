@@ -17,6 +17,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	db "github.com/sg/unaerp-api/internal/db/sqlc"
 	"github.com/sg/unaerp-api/internal/graph/generated"
+	"github.com/sg/unaerp-api/internal/db/seed"
 	"github.com/sg/unaerp-api/internal/graph/model"
 	"github.com/sg/unaerp-api/internal/middleware"
 )
@@ -453,7 +454,20 @@ func (r *mutationResolver) CreateHighlight(ctx context.Context, editionID uuid.U
 
 // ImportEdition is the resolver for the importEdition field.
 func (r *mutationResolver) ImportEdition(ctx context.Context, payload string) (bool, error) {
-	return false, errors.New("não implementado — task 12")
+	if err := requireAuth(ctx); err != nil {
+		return false, err
+	}
+
+	data, err := seed.ParseImport(payload)
+	if err != nil {
+		return false, fmt.Errorf("payload inválido: %w", err)
+	}
+
+	if err := seed.Import(ctx, r.DB, data); err != nil {
+		return false, err
+	}
+
+	return true, nil
 }
 
 // ---- Query resolvers ----
