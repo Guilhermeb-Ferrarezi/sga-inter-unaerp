@@ -1,0 +1,79 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* tokens InterUnaERP */
+    --bg: #fafbfd;
+    --surface-1: #ffffff;
+    --surface-2: #ffffff;
+    --surface-3: #f3f6fa;
+    --border: #e1e8f0;
+    --border-strong: #c9d4e3;
+
+    --fg: #0a1a3d;
+    --fg-soft: #4a5878;
+    --fg-mute: #8493ae;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html,
+  body {
+    @apply bg-bg text-fg font-sans antialiased;
+  }
+
+  body {
+    overflow-x: hidden;
+  }
+}
+
+/* Brutal shadow helpers */
+@layer utilities {
+  .shadow-brutal {
+    box-shadow: 5px 5px 0 var(--navy);
+  }
+  .shadow-brutal-lg {
+    box-shadow: 8px 8px 0 var(--navy);
+  }
+  .shadow-brutal-lime {
+    box-shadow: 5px 5px 0 #a4cd3a;
+  }
+  .shadow-brutal-teal {
+    box-shadow: 5px 5px 0 #2eaa80;
+  }
+  .shadow-brutal-blue {
+    box-shadow: 5px 5px 0 #0073b7;
+  }
+  .shadow-brutal-sm {
+    box-shadow: 3px 3px 0 var(--navy);
+  }
+
+  /* Tactical corner brackets */
+  .brackets-lime {
+    position: relative;
+  }
+  .brackets-lime::before {
+    content: "";
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 24px;
+    height: 24px;
+    border-top: 3px solid #a4cd3a;
+    border-right: 3px solid #a4cd3a;
+  }
+  .brackets-lime::after {
+    content: "";
+    position: absolute;
+    bottom: -2px;
+    left: -2px;
+    width: 24px;
+    height: 24px;
+    border-bottom: 3px solid #a4cd3a;
+    border-left: 3px solid #a4cd3a;
+  }
+}
