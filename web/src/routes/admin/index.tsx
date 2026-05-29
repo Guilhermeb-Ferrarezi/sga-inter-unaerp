@@ -9,121 +9,61 @@ import {
   Lightning,
   TrendUp,
   CheckCircle,
-  WarningCircle,
 } from "@phosphor-icons/react";
 import { AdminTopbar } from "@/components/admin/AdminTopbar";
 import { TeamLogo } from "@/components/ui/team-logo";
 import { Button } from "@/components/ui/button";
-import {
-  teams,
-  matches,
-  liveMatches,
-  upcomingMatches,
-  doneMatches,
-  highlights,
-} from "@/data/mock";
+import { useEditionTeams } from "@/lib/use-edition";
+import { useEditionMatches, isLive, isUpcoming, isDone } from "@/lib/use-matches";
+import { useEditionHighlights } from "@/lib/use-highlights";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/admin/")({
   component: AdminDashboard,
 });
 
-const kpis = [
-  {
-    label: "Times confirmados",
-    value: teams.length,
-    delta: "+0 esta semana",
-    icon: Trophy,
-    color: "blue",
-  },
-  {
-    label: "Jogadores",
-    value: 47,
-    delta: "+3 esta semana",
-    icon: Lightning,
-    color: "teal",
-  },
-  {
-    label: "Partidas jogadas",
-    value: doneMatches().length,
-    delta: `${matches.length} previstas`,
-    icon: Sword,
-    color: "lime",
-  },
-  {
-    label: "Highlights",
-    value: highlights.length,
-    delta: "+12 esta semana",
-    icon: VideoCamera,
-    color: "blue",
-  },
-] as const;
-
-const todos = [
-  {
-    title: "Registrar resultado: Olimpo vs Thunder (07/Jun)",
-    type: "match",
-    urgent: true,
-  },
-  {
-    title: "Publicar highlight: ACE g1lh (R22)",
-    type: "highlight",
-    urgent: false,
-  },
-  {
-    title: "Confirmar roster: Lynx · 1 jogador pendente",
-    type: "team",
-    urgent: false,
-  },
-  {
-    title: "Upload fotos do estúdio: 07/Jun",
-    type: "media",
-    urgent: true,
-  },
-];
-
-const activity = [
-  {
-    by: "guilherme",
-    action: "registrou resultado",
-    target: "Olimpo 13×7 Thunder",
-    time: "2h atrás",
-  },
-  {
-    by: "henrique",
-    action: "publicou highlight",
-    target: "ACE do g1lh · R22",
-    time: "3h atrás",
-  },
-  {
-    by: "guilherme",
-    action: "adicionou jogador",
-    target: "scr ao roster Olimpo",
-    time: "5h atrás",
-  },
-  {
-    by: "henrique",
-    action: "fez upload",
-    target: "12 fotos · Bastidores R2",
-    time: "1d atrás",
-  },
-  {
-    by: "guilherme",
-    action: "atualizou status",
-    target: "Inter UnaERP 2025 → ongoing",
-    time: "2d atrás",
-  },
-];
-
 function AdminDashboard() {
-  const live = liveMatches();
-  const upcoming = upcomingMatches().slice(0, 3);
+  const { teams } = useEditionTeams("valorant");
+  const { matches } = useEditionMatches("valorant");
+  const { highlights } = useEditionHighlights("valorant");
+
+  const live = matches.filter(isLive);
+  const upcoming = matches.filter(isUpcoming).slice(0, 3);
+  const done = matches.filter(isDone);
+
+  const kpis = [
+    {
+      label: "Times confirmados",
+      value: teams.length,
+      icon: Trophy,
+      color: "blue" as const,
+    },
+    {
+      label: "Jogadores",
+      value: "—",
+      icon: Lightning,
+      color: "teal" as const,
+    },
+    {
+      label: "Partidas jogadas",
+      value: done.length,
+      delta: `${matches.length} previstas`,
+      icon: Sword,
+      color: "lime" as const,
+    },
+    {
+      label: "Highlights",
+      value: highlights.length,
+      icon: VideoCamera,
+      color: "blue" as const,
+    },
+  ];
 
   return (
     <>
       <AdminTopbar
         title="Dashboard"
-        subtitle="Inter UnaERP · Valorant 2025 · em andamento"
+        subtitle="Inter UnaERP · Valorant 2025"
         actions={
           <Button asChild>
             <Link to="/admin/confrontos">
@@ -171,9 +111,11 @@ function AdminDashboard() {
                 <div className="text-[11px] text-fg-mute font-extrabold uppercase tracking-[0.1em] mt-1.5">
                   {k.label}
                 </div>
-                <div className="text-[11px] text-teal font-bold mt-1">
-                  {k.delta}
-                </div>
+                {k.delta && (
+                  <div className="text-[11px] text-teal font-bold mt-1">
+                    {k.delta}
+                  </div>
+                )}
               </motion.div>
             );
           })}
@@ -181,7 +123,6 @@ function AdminDashboard() {
 
         {/* CONTENT GRID */}
         <div className="grid lg:grid-cols-3 gap-7">
-          {/* LEFT — PARTIDAS + TODO */}
           <div className="lg:col-span-2 space-y-6">
             <DashCard
               title="Ao vivo agora"
@@ -234,93 +175,69 @@ function AdminDashboard() {
             </DashCard>
 
             <DashCard
-              title="A fazer"
-              dotColor="lime"
-              count={todos.length}
-            >
-              {todos.map((t, i) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-3 py-2.5 border-b border-border last:border-b-0"
-                >
-                  <input
-                    type="checkbox"
-                    className="w-4 h-4 accent-lime cursor-pointer"
-                  />
-                  <span className="flex-1 text-[13px] font-medium text-navy">
-                    {t.title}
-                  </span>
-                  {t.urgent && (
-                    <span className="flex items-center gap-1 text-[10px] text-red-500 font-extrabold uppercase tracking-[0.1em]">
-                      <WarningCircle weight="fill" size={12} />
-                      Urgente
-                    </span>
-                  )}
-                </div>
-              ))}
-            </DashCard>
-
-            <DashCard
               title="Próximas partidas"
               dotColor="blue"
               link={{ to: "/admin/confrontos", label: "Agenda →" }}
             >
-              {upcoming.map((m) => {
-                const a = teams.find((t) => t.slug === m.teamA);
-                const b = teams.find((t) => t.slug === m.teamB);
-                if (!a || !b) return null;
-                const d = new Date(m.scheduledAt);
-                return (
-                  <div
-                    key={m.id}
-                    className="grid grid-cols-[80px_1fr_auto] gap-3 py-3 items-center border-b border-border last:border-b-0"
-                  >
-                    <div>
-                      <div className="text-[10px] text-fg-mute font-extrabold uppercase tracking-[0.08em]">
-                        {new Intl.DateTimeFormat("pt-BR", {
-                          weekday: "short",
-                          day: "2-digit",
-                          month: "2-digit",
-                        }).format(d)}
+              {upcoming.length === 0 ? (
+                <Empty text="Nenhuma partida agendada" />
+              ) : (
+                upcoming.map((m) => {
+                  const a = teams.find((t) => t.slug === m.teamA);
+                  const b = teams.find((t) => t.slug === m.teamB);
+                  if (!a || !b) return null;
+                  const d = new Date(m.scheduledAt);
+                  return (
+                    <div
+                      key={m.id}
+                      className="grid grid-cols-[80px_1fr_auto] gap-3 py-3 items-center border-b border-border last:border-b-0"
+                    >
+                      <div>
+                        <div className="text-[10px] text-fg-mute font-extrabold uppercase tracking-[0.08em]">
+                          {new Intl.DateTimeFormat("pt-BR", {
+                            weekday: "short",
+                            day: "2-digit",
+                            month: "2-digit",
+                          }).format(d)}
+                        </div>
+                        <div className="font-display italic font-black text-[18px] text-navy tabular-nums">
+                          {new Intl.DateTimeFormat("pt-BR", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          }).format(d)}
+                        </div>
                       </div>
-                      <div className="font-display italic font-black text-[18px] text-navy tabular-nums">
-                        {new Intl.DateTimeFormat("pt-BR", {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        }).format(d)}
+                      <div className="flex items-center gap-3">
+                        <TeamLogo
+                          shortName={a.shortName}
+                          color={a.color}
+                          size="xs"
+                        />
+                        <span className="font-display italic font-extrabold text-[14px] uppercase text-navy">
+                          {a.name}
+                        </span>
+                        <span className="text-fg-mute text-[10px] font-extrabold uppercase">
+                          vs
+                        </span>
+                        <span className="font-display italic font-extrabold text-[14px] uppercase text-navy">
+                          {b.name}
+                        </span>
+                        <TeamLogo
+                          shortName={b.shortName}
+                          color={b.color}
+                          size="xs"
+                        />
                       </div>
+                      <Button size="sm" variant="ghost">
+                        Editar
+                      </Button>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <TeamLogo
-                        shortName={a.shortName}
-                        color={a.color}
-                        size="xs"
-                      />
-                      <span className="font-display italic font-extrabold text-[14px] uppercase text-navy">
-                        {a.name}
-                      </span>
-                      <span className="text-fg-mute text-[10px] font-extrabold uppercase">
-                        vs
-                      </span>
-                      <span className="font-display italic font-extrabold text-[14px] uppercase text-navy">
-                        {b.name}
-                      </span>
-                      <TeamLogo
-                        shortName={b.shortName}
-                        color={b.color}
-                        size="xs"
-                      />
-                    </div>
-                    <Button size="sm" variant="ghost">
-                      Editar
-                    </Button>
-                  </div>
-                );
-              })}
+                  );
+                })
+              )}
             </DashCard>
           </div>
 
-          {/* RIGHT — Atividade + atalhos */}
           <div className="space-y-6">
             <DashCard title="Atalhos" dotColor="teal">
               <div className="grid grid-cols-2 gap-2">
@@ -347,32 +264,11 @@ function AdminDashboard() {
               </div>
             </DashCard>
 
-            <DashCard title="Atividade recente" dotColor="blue">
-              {activity.map((a, i) => (
-                <div
-                  key={i}
-                  className="py-2.5 border-b border-border last:border-b-0"
-                >
-                  <div className="text-[12.5px] text-fg-soft leading-snug">
-                    <strong className="font-display italic font-black uppercase text-navy mr-1">
-                      {a.by}
-                    </strong>
-                    {a.action}{" "}
-                    <strong className="text-blue">{a.target}</strong>
-                  </div>
-                  <div className="text-[10px] text-fg-mute font-extrabold uppercase tracking-[0.08em] mt-0.5">
-                    {a.time}
-                  </div>
-                </div>
-              ))}
-            </DashCard>
-
             <DashCard title="Health Check" dotColor="teal">
-              <HealthItem ok label="API GraphQL" detail="200 OK · 12ms" />
-              <HealthItem ok label="PostgreSQL" detail="9 ms" />
-              <HealthItem ok label="Redis Cache" detail="2 ms" />
-              <HealthItem ok label="Cloudflare R2" detail="connected" />
-              <HealthItem ok label="Cloudflare Stream" detail="connected" />
+              <HealthItem ok label="API GraphQL" detail="conectado" />
+              <HealthItem ok label="PostgreSQL" detail="ok" />
+              <HealthItem ok label="Redis Cache" detail="ok" />
+              <HealthItem ok label="Cloudflare R2" detail="conectado" />
             </DashCard>
           </div>
         </div>

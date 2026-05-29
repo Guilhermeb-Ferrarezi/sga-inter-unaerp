@@ -8,7 +8,8 @@ import { StatusBadge } from "@/components/admin/StatusBadge";
 import { TeamLogo } from "@/components/ui/team-logo";
 import { Button } from "@/components/ui/button";
 import { FilterPill } from "@/components/ui/filter-pill";
-import { matches, findTeam } from "@/data/mock";
+import { useEditionMatches } from "@/lib/use-matches";
+import { useEditionTeams } from "@/lib/use-edition";
 import type { Match } from "@/data/types";
 
 export const Route = createFileRoute("/admin/confrontos")({
@@ -19,6 +20,9 @@ type StatusFilter = "all" | "scheduled" | "live" | "done";
 
 function AdminMatchesPage() {
   const [filter, setFilter] = useState<StatusFilter>("all");
+  const { matches, loading } = useEditionMatches("valorant");
+  const { teams } = useEditionTeams("valorant");
+  const findTeam = (slug: string) => teams.find((t) => t.slug === slug);
 
   const list = matches.filter((m) => filter === "all" || m.status === filter);
 
@@ -65,6 +69,11 @@ function AdminMatchesPage() {
           </FilterPill>
         </div>
 
+        {loading ? (
+          <div className="text-center py-16 text-fg-mute font-display italic font-extrabold uppercase">
+            Carregando partidas…
+          </div>
+        ) : (
         <DataTable<Match>
           columns={[
             {
@@ -189,6 +198,7 @@ function AdminMatchesPage() {
           rows={list}
           rowKey={(m) => m.id}
         />
+        )}
       </div>
     </>
   );

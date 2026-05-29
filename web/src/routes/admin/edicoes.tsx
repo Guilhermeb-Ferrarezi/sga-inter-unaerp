@@ -4,7 +4,7 @@ import { Plus, Trophy } from "@phosphor-icons/react";
 import { AdminTopbar } from "@/components/admin/AdminTopbar";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { Button } from "@/components/ui/button";
-import { editions, findTeam } from "@/data/mock";
+import { useEditions } from "@/lib/use-editions";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/admin/edicoes")({
@@ -12,22 +12,34 @@ export const Route = createFileRoute("/admin/edicoes")({
 });
 
 function AdminEditionsPage() {
+  const { editions, loading } = useEditions("valorant");
+
   return (
     <>
       <AdminTopbar
         title="Edições"
         subtitle={`${editions.length} edições cadastradas no sistema`}
         actions={
-          <Button>
+          <Button disabled>
             <Plus weight="bold" size={14} />
             Nova edição
           </Button>
         }
       />
 
-      <div className="p-9 grid grid-cols-1 lg:grid-cols-2 gap-5">
+      <div className="p-9">
+        {loading ? (
+          <div className="text-center py-16 text-fg-mute font-display italic font-extrabold uppercase">
+            Carregando edições…
+          </div>
+        ) : editions.length === 0 ? (
+          <div className="bg-white border-[1.5px] border-border-strong p-9 text-center text-fg-mute font-display italic font-extrabold uppercase">
+            Nenhuma edição cadastrada.
+          </div>
+        ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {editions.map((e, i) => {
-          const champ = e.champion ? findTeam(e.champion) : null;
+          const champ = null as { name: string } | null;
           return (
             <motion.div
               key={e.year}
@@ -94,6 +106,8 @@ function AdminEditionsPage() {
             </motion.div>
           );
         })}
+        </div>
+        )}
       </div>
     </>
   );

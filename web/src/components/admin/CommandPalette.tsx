@@ -13,12 +13,8 @@ import {
   ChartLineUp,
   ArrowBendUpRight,
 } from "@phosphor-icons/react";
-import {
-  teams,
-  players,
-  matches,
-  findTeam,
-} from "@/data/mock";
+import { useEditionTeams } from "@/lib/use-edition";
+import { useEditionMatches } from "@/lib/use-matches";
 import { cn } from "@/lib/utils";
 
 type CommandItem = {
@@ -28,7 +24,7 @@ type CommandItem = {
   icon: typeof Sword;
   to: string;
   params?: Record<string, string>;
-  category: "Páginas" | "Times" | "Jogadores" | "Partidas";
+  category: "Páginas" | "Times" | "Partidas";
 };
 
 const adminPages: CommandItem[] = [
@@ -42,44 +38,6 @@ const adminPages: CommandItem[] = [
   { id: "p-imp", label: "Importar edição", icon: UploadSimple, to: "/admin/importar", category: "Páginas" },
 ];
 
-function buildItems(): CommandItem[] {
-  const teamItems: CommandItem[] = teams.map((t) => ({
-    id: `t-${t.id}`,
-    label: t.name,
-    hint: `@${t.slug} · Grupo ${t.group} · ${t.wins}V ${t.losses}D`,
-    icon: UsersThree,
-    to: "/times/$slug",
-    params: { slug: t.slug },
-    category: "Times",
-  }));
-  const playerItems: CommandItem[] = players.map((p) => {
-    const team = findTeam(p.teamSlug);
-    return {
-      id: `pl-${p.id}`,
-      label: p.ign,
-      hint: `${p.role}${team ? ` · ${team.name}` : ""}`,
-      icon: GameController,
-      to: "/jogadores/$id",
-      params: { id: p.id },
-      category: "Jogadores",
-    };
-  });
-  const matchItems: CommandItem[] = matches.map((m) => {
-    const a = findTeam(m.teamA);
-    const b = findTeam(m.teamB);
-    return {
-      id: `m-${m.id}`,
-      label: `${a?.name ?? "?"} vs ${b?.name ?? "?"}`,
-      hint: `${m.round} · ${m.status}`,
-      icon: Sword,
-      to: "/confrontos/$id",
-      params: { id: m.id },
-      category: "Partidas",
-    };
-  });
-  return [...adminPages, ...teamItems, ...playerItems, ...matchItems];
-}
-
 interface CommandPaletteProps {
   open: boolean;
   onClose: () => void;
@@ -91,7 +49,34 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
 
-  const items = useMemo(() => buildItems(), []);
+  const { teams } = useEditionTeams("valorant");
+  const { matches } = useEditionMatches("valorant");
+
+  const items = useMemo<CommandItem[]>(() => {
+    const teamItems: CommandItem[] = teams.map((t) => ({
+      id: `t-${t.id}`,
+      label: t.name,
+      hint: `@${t.slug} · Grupo ${t.group} · ${t.wins}V ${t.losses}D`,
+      icon: UsersThree,
+      to: "/times/$slug",
+      params: { slug: t.slug },
+      category: "Times",
+    }));
+    const matchItems: CommandItem[] = matches.map((m) => {
+      const a = teams.find((t) => t.slug === m.teamA);
+      const b = teams.find((t) => t.slug === m.teamB);
+      return {
+        id: `m-${m.id}`,
+        label: `${a?.name ?? "?"} vs ${b?.name ?? "?"}`,
+        hint: `${m.round} · ${m.status}`,
+        icon: Sword,
+        to: "/confrontos/$id",
+        params: { id: m.id },
+        category: "Partidas",
+      };
+    });
+    return [...adminPages, ...teamItems, ...matchItems];
+  }, [teams, matches]);
 
   const filtered = useMemo(() => {
     if (!query.trim()) return items.slice(0, 12);

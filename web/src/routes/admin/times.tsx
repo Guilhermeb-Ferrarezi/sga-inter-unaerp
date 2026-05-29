@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation } from "@apollo/client";
 import { motion } from "framer-motion";
@@ -8,7 +8,7 @@ import { DataTable } from "@/components/admin/DataTable";
 import { RowActions } from "@/components/admin/RowActions";
 import { TeamLogo } from "@/components/ui/team-logo";
 import { Button } from "@/components/ui/button";
-import { teams, teamRoster } from "@/data/mock";
+import { useEditionTeams } from "@/lib/use-edition";
 import { CREATE_TEAM } from "@/lib/graphql/queries";
 import { cn } from "@/lib/utils";
 import type { Team } from "@/data/types";
@@ -19,8 +19,12 @@ export const Route = createFileRoute("/admin/times")({
 
 function AdminTeamsPage() {
   const [showForm, setShowForm] = useState(false);
-  // Lista local mutável pra mostrar optimistic insert
-  const [localTeams, setLocalTeams] = useState<Team[]>(teams);
+  const { teams, loading } = useEditionTeams("valorant");
+  const [localTeams, setLocalTeams] = useState<Team[]>([]);
+
+  useEffect(() => {
+    setLocalTeams(teams);
+  }, [teams]);
 
   return (
     <>
@@ -46,6 +50,11 @@ function AdminTeamsPage() {
           />
         )}
 
+        {loading && localTeams.length === 0 ? (
+          <div className="text-center py-16 text-fg-mute font-display italic font-extrabold uppercase">
+            Carregando times…
+          </div>
+        ) : (
         <DataTable<Team>
           columns={[
             {
@@ -86,9 +95,9 @@ function AdminTeamsPage() {
               header: "Roster",
               width: "100px",
               className: "text-center",
-              render: (t) => (
-                <span className="text-[13px] font-bold text-navy">
-                  {teamRoster(t.slug).length} / 5
+              render: () => (
+                <span className="text-[13px] font-bold text-fg-mute">
+                  —
                 </span>
               ),
             },
@@ -132,6 +141,7 @@ function AdminTeamsPage() {
           rows={localTeams}
           rowKey={(t) => t.id}
         />
+        )}
       </div>
     </>
   );
@@ -203,8 +213,7 @@ function NewTeamForm({
       setSuccess(true);
       onCreated(optimisticTeam);
     } catch {
-      // Mesmo se a API der erro (offline), insere optimistic no local pra demo
-      onCreated(optimisticTeam);
+      // erro tratado via error state do Apollo, não insere local
     }
   };
 
@@ -229,14 +238,13 @@ function NewTeamForm({
       </div>
 
       {error && (
-        <div className="mb-5 bg-[#F5B700]/15 border border-[#F5B700] text-navy p-3.5 flex items-start gap-3 text-[12.5px]">
-          <WarningCircle weight="fill" size={18} className="shrink-0 mt-0.5" />
+        <div className="mb-5 bg-red-500/10 border border-red-500 text-navy p-3.5 flex items-start gap-3 text-[12.5px]">
+          <WarningCircle weight="fill" size={18} className="shrink-0 mt-0.5 text-red-500" />
           <div>
             <strong className="font-display italic font-extrabold uppercase mr-2">
-              API offline
+              Erro ao criar
             </strong>
-            O time foi criado localmente em modo demo. Quando a API voltar,
-            tente novamente para persistir no banco.
+            {error.message}
           </div>
         </div>
       )}

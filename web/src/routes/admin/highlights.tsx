@@ -4,7 +4,9 @@ import { AdminTopbar } from "@/components/admin/AdminTopbar";
 import { DataTable } from "@/components/admin/DataTable";
 import { RowActions } from "@/components/admin/RowActions";
 import { Button } from "@/components/ui/button";
-import { highlights, findTeam, findMatch } from "@/data/mock";
+import { useEditionHighlights } from "@/lib/use-highlights";
+import { useEditionMatches } from "@/lib/use-matches";
+import { useEditionTeams } from "@/lib/use-edition";
 import { cn } from "@/lib/utils";
 import type { Highlight } from "@/data/types";
 
@@ -26,13 +28,19 @@ const categoryClass: Record<Highlight["category"], string> = {
 };
 
 function AdminHighlightsPage() {
+  const { highlights, loading } = useEditionHighlights("valorant");
+  const { matches } = useEditionMatches("valorant");
+  const { teams } = useEditionTeams("valorant");
+  const findTeam = (slug: string) => teams.find((t) => t.slug === slug);
+  const findMatch = (id: string) => matches.find((m) => m.id === id);
+
   return (
     <>
       <AdminTopbar
         title="Highlights"
         subtitle={`${highlights.length} clipes publicados · Cloudflare Stream`}
         actions={
-          <Button>
+          <Button disabled>
             <Plus weight="bold" size={14} />
             Novo highlight
           </Button>
@@ -40,6 +48,15 @@ function AdminHighlightsPage() {
       />
 
       <div className="p-9">
+        {loading ? (
+          <div className="text-center py-16 text-fg-mute font-display italic font-extrabold uppercase">
+            Carregando highlights…
+          </div>
+        ) : highlights.length === 0 ? (
+          <div className="bg-white border-[1.5px] border-border-strong p-9 text-center text-fg-mute font-display italic font-extrabold uppercase">
+            Nenhum highlight publicado ainda.
+          </div>
+        ) : (
         <DataTable<Highlight>
           columns={[
             {
@@ -151,6 +168,7 @@ function AdminHighlightsPage() {
           rows={highlights}
           rowKey={(h) => h.id}
         />
+        )}
       </div>
     </>
   );
