@@ -19,7 +19,7 @@ export function Section({ alt, decoNum, children, className }: SectionProps) {
       {decoNum && (
         <div
           aria-hidden
-          className="absolute top-9 right-15 font-display italic font-black text-[200px] leading-none text-navy/[0.035] pointer-events-none select-none"
+          className="hidden md:block absolute top-9 right-15 font-display italic font-black text-[200px] leading-none text-navy/[0.035] pointer-events-none select-none"
         >
           {decoNum}
         </div>
