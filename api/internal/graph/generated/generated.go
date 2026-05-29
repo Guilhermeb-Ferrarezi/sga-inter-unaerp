@@ -98,6 +98,13 @@ type ComplexityRoot struct {
 		Winner   func(childComplexity int) int
 	}
 
+	Me struct {
+		Email  func(childComplexity int) int
+		Login  func(childComplexity int) int
+		Role   func(childComplexity int) int
+		UserID func(childComplexity int) int
+	}
+
 	Media struct {
 		Caption func(childComplexity int) int
 		Edition func(childComplexity int) int
@@ -148,6 +155,7 @@ type ComplexityRoot struct {
 		Highlights    func(childComplexity int, editionID uuid.UUID) int
 		Match         func(childComplexity int, id uuid.UUID) int
 		Matches       func(childComplexity int, editionID uuid.UUID, round *string) int
+		Me            func(childComplexity int) int
 		Player        func(childComplexity int, id uuid.UUID) int
 		Standings     func(childComplexity int, editionID uuid.UUID) int
 		Team          func(childComplexity int, slug string) int
@@ -192,6 +200,7 @@ type MutationResolver interface {
 	ImportEdition(ctx context.Context, payload string) (bool, error)
 }
 type QueryResolver interface {
+	Me(ctx context.Context) (*model.Me, error)
 	Games(ctx context.Context) ([]*model.Game, error)
 	ActiveEdition(ctx context.Context, gameSlug string) (*model.Edition, error)
 	Edition(ctx context.Context, id uuid.UUID) (*model.Edition, error)
@@ -477,6 +486,31 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.MatchResult.Winner(childComplexity), true
+
+	case "Me.email":
+		if e.ComplexityRoot.Me.Email == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Me.Email(childComplexity), true
+	case "Me.login":
+		if e.ComplexityRoot.Me.Login == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Me.Login(childComplexity), true
+	case "Me.role":
+		if e.ComplexityRoot.Me.Role == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Me.Role(childComplexity), true
+	case "Me.userId":
+		if e.ComplexityRoot.Me.UserID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Me.UserID(childComplexity), true
 
 	case "Media.caption":
 		if e.ComplexityRoot.Media.Caption == nil {
@@ -810,6 +844,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.Matches(childComplexity, args["editionId"].(uuid.UUID), args["round"].(*string)), true
+	case "Query.me":
+		if e.ComplexityRoot.Query.Me == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Query.Me(childComplexity), true
 	case "Query.player":
 		if e.ComplexityRoot.Query.Player == nil {
 			break
@@ -1113,7 +1153,15 @@ type PresignedUpload {
   r2Key: String!
 }
 
+type Me {
+  userId: Int!
+  email: String!
+  login: String!
+  role: Int!
+}
+
 type Query {
+  me: Me
   games: [Game!]!
   activeEdition(gameSlug: String!): Edition
   edition(id: UUID!): Edition
@@ -1281,6 +1329,20 @@ func (ec *executionContext) childFields_MatchResult(ctx context.Context, field g
 		return ec.fieldContext_MatchResult_playedAt(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type MatchResult", field.Name)
+}
+
+func (ec *executionContext) childFields_Me(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "userId":
+		return ec.fieldContext_Me_userId(ctx, field)
+	case "email":
+		return ec.fieldContext_Me_email(ctx, field)
+	case "login":
+		return ec.fieldContext_Me_login(ctx, field)
+	case "role":
+		return ec.fieldContext_Me_role(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type Me", field.Name)
 }
 
 func (ec *executionContext) childFields_Media(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
@@ -3301,6 +3363,98 @@ func (ec *executionContext) fieldContext_MatchResult_playedAt(_ context.Context,
 	return graphql.NewScalarFieldContext("MatchResult", field, false, false, errors.New("field of type Time does not have child fields"))
 }
 
+func (ec *executionContext) _Me_userId(ctx context.Context, field graphql.CollectedField, obj *model.Me) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Me_userId(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.UserID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Me_userId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Me", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _Me_email(ctx context.Context, field graphql.CollectedField, obj *model.Me) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Me_email(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Email, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Me_email(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Me", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _Me_login(ctx context.Context, field graphql.CollectedField, obj *model.Me) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Me_login(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Login, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Me_login(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Me", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _Me_role(ctx context.Context, field graphql.CollectedField, obj *model.Me) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Me_role(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Role, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int) graphql.Marshaler {
+			return ec.marshalNInt2int(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Me_role(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Me", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
 func (ec *executionContext) _Media_id(ctx context.Context, field graphql.CollectedField, obj *model.Media) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -4278,6 +4432,38 @@ func (ec *executionContext) _PresignedUpload_r2Key(ctx context.Context, field gr
 }
 func (ec *executionContext) fieldContext_PresignedUpload_r2Key(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("PresignedUpload", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _Query_me(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_me(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Query().Me(ctx)
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.Me) graphql.Marshaler {
+			return ec.marshalOMe2ᚖgithubᚗcomᚋsgᚋunaerpᚑapiᚋinternalᚋgraphᚋmodelᚐMe(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_Query_me(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_Me(ctx, field)
+		},
+	}
+	return fc, nil
 }
 
 func (ec *executionContext) _Query_games(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -6594,6 +6780,60 @@ func (ec *executionContext) _MatchResult(ctx context.Context, sel ast.SelectionS
 	return out
 }
 
+var meImplementors = []string{"Me"}
+
+func (ec *executionContext) _Me(ctx context.Context, sel ast.SelectionSet, obj *model.Me) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, meImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Me")
+		case "userId":
+			out.Values[i] = ec._Me_userId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "email":
+			out.Values[i] = ec._Me_email(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "login":
+			out.Values[i] = ec._Me_login(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "role":
+			out.Values[i] = ec._Me_role(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferred), math.MaxInt32)))
+
+	for label, dfs := range deferred {
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var mediaImplementors = []string{"Media"}
 
 func (ec *executionContext) _Media(ctx context.Context, sel ast.SelectionSet, obj *model.Media) graphql.Marshaler {
@@ -6915,6 +7155,25 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Query")
+		case "me":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_me(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "games":
 			field := field
 
@@ -8258,6 +8517,13 @@ func (ec *executionContext) marshalOMatchResult2ᚖgithubᚗcomᚋsgᚋunaerpᚑ
 		return graphql.Null
 	}
 	return ec._MatchResult(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOMe2ᚖgithubᚗcomᚋsgᚋunaerpᚑapiᚋinternalᚋgraphᚋmodelᚐMe(ctx context.Context, sel ast.SelectionSet, v *model.Me) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Me(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOPlayer2ᚖgithubᚗcomᚋsgᚋunaerpᚑapiᚋinternalᚋgraphᚋmodelᚐPlayer(ctx context.Context, sel ast.SelectionSet, v *model.Player) graphql.Marshaler {

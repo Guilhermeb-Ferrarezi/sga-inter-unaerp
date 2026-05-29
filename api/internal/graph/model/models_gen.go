@@ -68,6 +68,13 @@ type MatchResult struct {
 	PlayedAt time.Time    `json:"playedAt"`
 }
 
+type Me struct {
+	UserID int    `json:"userId"`
+	Email  string `json:"email"`
+	Login  string `json:"login"`
+	Role   int    `json:"role"`
+}
+
 type Media struct {
 	ID      uuid.UUID `json:"id"`
 	Edition *Edition  `json:"edition"`

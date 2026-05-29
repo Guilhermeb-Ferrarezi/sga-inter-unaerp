@@ -13,27 +13,14 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5"
+	pgx "github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/sg/unaerp-api/internal/db/seed"
 	db "github.com/sg/unaerp-api/internal/db/sqlc"
 	"github.com/sg/unaerp-api/internal/graph/generated"
-	"github.com/sg/unaerp-api/internal/db/seed"
 	"github.com/sg/unaerp-api/internal/graph/model"
 	"github.com/sg/unaerp-api/internal/middleware"
 )
-
-// ---- auth helper ----
-
-var errUnauthorized = errors.New("autenticação necessária")
-
-func requireAuth(ctx context.Context) error {
-	if middleware.UserFromContext(ctx) == nil {
-		return errUnauthorized
-	}
-	return nil
-}
-
-// ---- Mutation resolvers ----
 
 // CreateGame is the resolver for the createGame field.
 func (r *mutationResolver) CreateGame(ctx context.Context, slug string, name string, coverURL *string) (*model.Game, error) {
@@ -492,7 +479,19 @@ func (r *mutationResolver) ImportEdition(ctx context.Context, payload string) (b
 	return true, nil
 }
 
-// ---- Query resolvers ----
+// Me is the resolver for the me field.
+func (r *queryResolver) Me(ctx context.Context) (*model.Me, error) {
+	u := middleware.UserFromContext(ctx)
+	if u == nil {
+		return nil, nil
+	}
+	return &model.Me{
+		UserID: u.UserID,
+		Email:  u.Email,
+		Login:  u.Login,
+		Role:   u.Role,
+	}, nil
+}
 
 // Games is the resolver for the games field.
 func (r *queryResolver) Games(ctx context.Context) ([]*model.Game, error) {
@@ -829,4 +828,3 @@ func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
-

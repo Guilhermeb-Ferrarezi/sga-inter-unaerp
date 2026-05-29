@@ -105,7 +105,15 @@ type PresignedUpload {
   r2Key: String!
 }
 
+type Me {
+  userId: Int!
+  email: String!
+  login: String!
+  role: Int!
+}
+
 type Query {
+  me: Me
   games: [Game!]!
   activeEdition(gameSlug: String!): Edition
   edition(id: UUID!): Edition

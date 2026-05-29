@@ -1,4 +1,5 @@
-import { createContext, useContext, useMemo, useEffect, useState } from "react";
+import { createContext, useContext, useMemo } from "react";
+import { gql, useQuery } from "@apollo/client";
 
 export type AuthUser = {
   userId: number;
@@ -11,84 +12,53 @@ type AuthState = {
   user: AuthUser | null;
   isAdmin: boolean;
   isAuthenticated: boolean;
+  loading: boolean;
   signOut: () => void;
 };
 
 const AuthContext = createContext<AuthState | null>(null);
 
-// JWT shape do infra/auth-api: HS256 com { userId, email, login, role, exp }
-function decodeJwt(token: string): AuthUser | null {
-  try {
-    const [, payload] = token.split(".");
-    if (!payload) return null;
-    const padded = payload.replace(/-/g, "+").replace(/_/g, "/");
-    const json = atob(padded + "==".slice(0, (4 - (padded.length % 4)) % 4));
-    const parsed = JSON.parse(json);
-    if (typeof parsed.exp === "number" && parsed.exp * 1000 < Date.now()) {
-      return null;
+const ME_QUERY = gql`
+  query Me {
+    me {
+      userId
+      email
+      login
+      role
     }
-    if (
-      typeof parsed.userId !== "number" ||
-      typeof parsed.email !== "string" ||
-      typeof parsed.login !== "string" ||
-      typeof parsed.role !== "number"
-    ) {
-      return null;
-    }
-    return {
-      userId: parsed.userId,
-      email: parsed.email,
-      login: parsed.login,
-      role: parsed.role,
-    };
-  } catch {
-    return null;
   }
-}
-
-function readCookie(name: string): string | null {
-  if (typeof document === "undefined") return null;
-  const match = document.cookie.match(
-    new RegExp("(?:^|; )" + name + "=([^;]*)")
-  );
-  return match ? decodeURIComponent(match[1]) : null;
-}
+`;
 
 // Role 1 = admin no auth-api da SGA (ADMIN_ROLE constante no platform-user-repository.ts)
 const ADMIN_ROLE = 1;
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(() => {
-    const token = readCookie("sga_auth");
-    return token ? decodeJwt(token) : null;
-  });
+  const { data, loading, refetch } = useQuery<{ me: AuthUser | null }>(
+    ME_QUERY,
+    {
+      fetchPolicy: "cache-and-network",
+      errorPolicy: "all",
+    }
+  );
 
-  useEffect(() => {
-    // re-check periodically caso o cookie expire ou seja revalidado
-    const interval = setInterval(() => {
-      const token = readCookie("sga_auth");
-      const next = token ? decodeJwt(token) : null;
-      setUser((prev) => {
-        if (!prev && !next) return prev;
-        if (prev && next && prev.userId === next.userId) return prev;
-        return next;
-      });
-    }, 30_000);
-    return () => clearInterval(interval);
-  }, []);
+  const user = data?.me ?? null;
 
   const value = useMemo<AuthState>(
     () => ({
       user,
+      loading,
       isAdmin: !!user && user.role === ADMIN_ROLE,
       isAuthenticated: !!user,
       signOut: () => {
+        // Cookie é HttpOnly em .santos-games.com — não dá pra remover via JS.
+        // Redirecionar pra um endpoint logout da auth-api seria o correto.
+        // Por ora, só refetch (servidor decide se o cookie ainda é válido).
         document.cookie =
-          "sga_auth=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT";
-        setUser(null);
+          "sga_auth=; Path=/; Domain=.santos-games.com; Expires=Thu, 01 Jan 1970 00:00:01 GMT";
+        refetch();
       },
     }),
-    [user]
+    [user, loading, refetch]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
