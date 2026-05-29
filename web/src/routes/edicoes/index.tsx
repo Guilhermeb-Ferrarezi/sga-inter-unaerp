@@ -4,7 +4,8 @@ import { Lightning, Trophy, Archive } from "@phosphor-icons/react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Section, SectionHeader } from "@/components/ui/section";
 import { Button } from "@/components/ui/button";
-import { editions, currentEdition, findTeam } from "@/data/mock";
+import { useEditions } from "@/lib/use-editions";
+import { useEditionTeams } from "@/lib/use-edition";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/edicoes/")({
@@ -12,7 +13,13 @@ export const Route = createFileRoute("/edicoes/")({
 });
 
 function EditionsPage() {
+  const { editions, loading, error } = useEditions("valorant");
+  const { edition: gqlActiveEdition } = useEditionTeams("valorant");
   const past = editions.filter((e) => e.status !== "ongoing");
+  const currentEdition = editions.find((e) => e.status === "ongoing");
+  // findTeam stub — sem roster cadastrado, retorna fake
+  const findTeam = (_slug: string | undefined): { name: string } | undefined => undefined;
+  void gqlActiveEdition;
 
   return (
     <>
@@ -29,7 +36,18 @@ function EditionsPage() {
       />
 
       <Section decoNum="HIST">
-        {/* CURRENT EDITION */}
+        {loading && (
+          <div className="text-center py-12 text-fg-mute font-display italic font-extrabold uppercase">
+            Carregando edições…
+          </div>
+        )}
+        {error && (
+          <div className="text-center py-12 text-red-500 font-display italic font-extrabold uppercase">
+            Erro ao carregar
+          </div>
+        )}
+
+        {currentEdition && (
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -56,14 +74,13 @@ function EditionsPage() {
               label="Times"
               color="text-blue"
             />
-            <CurrentStat num="47" label="Jogadores" color="text-teal" />
+            <CurrentStat num="—" label="Jogadores" color="text-teal" />
             <CurrentStat
-              num={`12/${currentEdition.matchesCount}`}
+              num={`${currentEdition.matchesCount}`}
               label="Partidas"
               color="text-lime"
             />
             <CurrentStat num="28 Jun" label="Final" />
-            <CurrentStat num="R$ 5.000" label="Premiação" color="text-[#F5B700]" />
           </div>
           <div className="flex gap-3">
             <Button asChild>
@@ -74,6 +91,7 @@ function EditionsPage() {
             </Button>
           </div>
         </motion.div>
+        )}
 
         <SectionHeader
           number="02"

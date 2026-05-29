@@ -54,7 +54,8 @@ function readCookie(name: string): string | null {
   return match ? decodeURIComponent(match[1]) : null;
 }
 
-const ADMIN_ROLE_THRESHOLD = 50; // ajustar quando o spec de roles for definido
+// Role 1 = admin no auth-api da SGA (ADMIN_ROLE constante no platform-user-repository.ts)
+const ADMIN_ROLE = 1;
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(() => {
@@ -79,7 +80,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo<AuthState>(
     () => ({
       user,
-      isAdmin: !!user && user.role >= ADMIN_ROLE_THRESHOLD,
+      isAdmin: !!user && user.role === ADMIN_ROLE,
       isAuthenticated: !!user,
       signOut: () => {
         document.cookie =

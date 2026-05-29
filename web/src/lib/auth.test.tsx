@@ -6,7 +6,7 @@ function wrapper({ children }: { children: React.ReactNode }) {
   return <AuthProvider>{children}</AuthProvider>;
 }
 
-// HS256 token cuja payload é { userId: 7, email: 'a@b.c', login: 'guilherme', role: 99, exp: <futuro> }
+// HS256 token cuja payload é { userId: 7, email: 'a@b.c', login: 'guilherme', role: 1, exp: <futuro> }
 // Para teste só precisamos do formato de 3 partes — a verificação criptográfica
 // é feita no backend; o cliente só lê os claims.
 function makeToken(payload: Record<string, unknown>) {
@@ -46,7 +46,7 @@ describe("useAuth", () => {
       userId: 7,
       email: "guilherme@example.com",
       login: "guilherme",
-      role: 99,
+      role: 1,
       exp: Math.floor(Date.now() / 1000) + 3600,
     });
     setCookie("sga_auth", token);
@@ -54,7 +54,7 @@ describe("useAuth", () => {
     expect(result.current.user?.userId).toBe(7);
     expect(result.current.user?.login).toBe("guilherme");
     expect(result.current.isAuthenticated).toBe(true);
-    expect(result.current.isAdmin).toBe(true); // role 99 > threshold 50
+    expect(result.current.isAdmin).toBe(true); // role 1 = admin
   });
 
   it("treats expired token as unauthenticated", () => {
@@ -62,7 +62,7 @@ describe("useAuth", () => {
       userId: 7,
       email: "g@e.com",
       login: "g",
-      role: 99,
+      role: 1,
       exp: Math.floor(Date.now() / 1000) - 100,
     });
     setCookie("sga_auth", token);
@@ -75,7 +75,7 @@ describe("useAuth", () => {
       userId: 1,
       email: "user@x.com",
       login: "user",
-      role: 10,
+      role: 2,
       exp: Math.floor(Date.now() / 1000) + 3600,
     });
     setCookie("sga_auth", token);
@@ -89,7 +89,7 @@ describe("useAuth", () => {
       userId: 1,
       email: "x@y.z",
       login: "u",
-      role: 99,
+      role: 1,
       exp: Math.floor(Date.now() / 1000) + 3600,
     });
     setCookie("sga_auth", token);
