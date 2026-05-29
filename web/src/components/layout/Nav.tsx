@@ -21,7 +21,7 @@ const links = [
 
 export function Nav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const { user, isAdmin, signOut } = useAuth();
+  const { user, signOut } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const isActive = (to: string) =>
@@ -78,15 +78,13 @@ export function Nav() {
           </span>
           {user ? (
             <div className="flex items-center gap-2">
-              {isAdmin && (
-                <Link
-                  to="/admin"
-                  className="bg-lime text-navy px-3 py-2 text-[11px] font-display italic font-extrabold uppercase tracking-[0.08em] [box-shadow:2px_2px_0_#0A1A3D] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:[box-shadow:3px_3px_0_#0A1A3D] transition-all inline-flex items-center gap-1.5"
-                >
-                  <ShieldCheck weight="fill" size={12} />
-                  <span className="hidden sm:inline">Admin</span>
-                </Link>
-              )}
+              <Link
+                to="/admin"
+                className="bg-lime text-navy px-3 py-2 text-[11px] font-display italic font-extrabold uppercase tracking-[0.08em] [box-shadow:2px_2px_0_#0A1A3D] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:[box-shadow:3px_3px_0_#0A1A3D] transition-all inline-flex items-center gap-1.5"
+              >
+                <ShieldCheck weight="fill" size={12} />
+                <span className="hidden sm:inline">Admin</span>
+              </Link>
               <div className="flex items-center gap-2 bg-surface-3 border border-border-strong pl-2 pr-1 py-1">
                 <div className="w-6 h-6 bg-navy text-white flex items-center justify-center font-display italic font-black text-[10px]">
                   {user.login.charAt(0).toUpperCase()}
@@ -217,16 +215,14 @@ export function Nav() {
                         <SignOut weight="bold" size={14} />
                       </button>
                     </div>
-                    {isAdmin && (
-                      <Link
-                        to="/admin"
-                        onClick={() => setMobileOpen(false)}
-                        className="block bg-lime text-navy py-3 text-center font-display italic font-extrabold uppercase text-[13px] tracking-[0.08em] [box-shadow:3px_3px_0_#0A1A3D]"
-                      >
-                        <ShieldCheck weight="fill" size={14} className="inline mr-2" />
-                        Painel Admin
-                      </Link>
-                    )}
+                    <Link
+                      to="/admin"
+                      onClick={() => setMobileOpen(false)}
+                      className="block bg-lime text-navy py-3 text-center font-display italic font-extrabold uppercase text-[13px] tracking-[0.08em] [box-shadow:3px_3px_0_#0A1A3D]"
+                    >
+                      <ShieldCheck weight="fill" size={14} className="inline mr-2" />
+                      Painel Admin
+                    </Link>
                   </div>
                 ) : (
                   <button

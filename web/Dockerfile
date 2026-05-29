@@ -1,5 +1,7 @@
 FROM nginx:alpine
-# Servimos sob /inter-unaerp/ — Vite buildou com base="/inter-unaerp/"
+# API_UPSTREAM: host:port do serviço da API (default: inter-unaerp-api:8080).
+# Define no Easypanel se o serviço tiver outro nome interno.
+ENV API_UPSTREAM=inter-unaerp-api:8080
 COPY dist/ /usr/share/nginx/html/universitarios/inter-unaerp/
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY nginx.conf.template /etc/nginx/templates/default.conf.template
 EXPOSE 80

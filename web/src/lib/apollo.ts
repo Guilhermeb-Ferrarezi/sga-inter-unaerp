@@ -1,16 +1,16 @@
 import { ApolloClient, InMemoryCache, HttpLink } from "@apollo/client";
 
-// Resolução da URL em ordem:
-// 1. VITE_GRAPHQL_URL (env var explícita no build)
-// 2. Em prod (hostname diferente de localhost): API no host inter-unaerp-api
-// 3. Dev local: localhost:8080/graphql
+// Em prod: path relativo (nginx faz proxy_pass pra API). Same-origin
+// resolve cookie HttpOnly e CORS automaticamente.
+// Em dev: localhost:8080. Override via VITE_GRAPHQL_URL.
 function resolveGraphqlUrl(): string {
   const envUrl = import.meta.env.VITE_GRAPHQL_URL as string | undefined;
   if (envUrl) return envUrl;
   if (typeof window !== "undefined") {
     const host = window.location.hostname;
     if (host !== "localhost" && host !== "127.0.0.1") {
-      return "https://guilherme-inter-unaerp-api.mduiqo.easypanel.host/graphql";
+      const basePath = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
+      return `${basePath}/api/graphql`;
     }
   }
   return "http://localhost:8080/graphql";
