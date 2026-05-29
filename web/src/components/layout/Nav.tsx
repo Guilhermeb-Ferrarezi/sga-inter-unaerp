@@ -6,6 +6,7 @@ import { Brand } from "./Brand";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
+import { redirectToSgaAuth } from "@/lib/sga-auth";
 
 const links = [
   { to: "/", label: "Início" },
@@ -103,12 +104,13 @@ export function Nav() {
               </div>
             </div>
           ) : (
-            <Link
-              to="/entrar"
+            <button
+              type="button"
+              onClick={redirectToSgaAuth}
               className="hidden sm:inline-flex bg-blue text-white px-5 py-2 text-[11.5px] font-extrabold uppercase tracking-[0.08em] shadow-brutal-sm hover:translate-x-[-1px] hover:translate-y-[-1px] hover:[box-shadow:4px_4px_0_#0A1A3D] transition-all"
             >
               Entrar com SGA
-            </Link>
+            </button>
           )}
           {/* Hamburger */}
           <button
@@ -227,13 +229,16 @@ export function Nav() {
                     )}
                   </div>
                 ) : (
-                  <Link
-                    to="/entrar"
-                    onClick={() => setMobileOpen(false)}
-                    className="block bg-blue text-white py-3 text-center font-display italic font-extrabold uppercase text-[13px] tracking-[0.08em] shadow-brutal-sm"
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMobileOpen(false);
+                      redirectToSgaAuth();
+                    }}
+                    className="block w-full bg-blue text-white py-3 text-center font-display italic font-extrabold uppercase text-[13px] tracking-[0.08em] shadow-brutal-sm"
                   >
                     Entrar com SGA
-                  </Link>
+                  </button>
                 )}
               </div>
             </motion.aside>
