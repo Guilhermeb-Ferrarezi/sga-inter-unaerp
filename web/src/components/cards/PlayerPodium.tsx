@@ -33,8 +33,15 @@ const positions = [
 ];
 
 export function PlayerPodium({ top3 }: PlayerPodiumProps) {
+  if (top3.length === 0) {
+    return (
+      <div className="text-center py-12 text-fg-mute font-display italic font-extrabold uppercase">
+        Sem estatísticas de jogadores ainda.
+      </div>
+    );
+  }
   // expected order: [#2, #1, #3]
-  const ordered = [top3[1], top3[0], top3[2]];
+  const ordered = [top3[1], top3[0], top3[2]].filter(Boolean) as Player[];
   return (
     <div className="grid grid-cols-[1fr_1.2fr_1fr] gap-5 items-end mt-8 mb-12">
       {ordered.map((p, idx) => {

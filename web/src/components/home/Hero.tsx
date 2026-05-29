@@ -3,7 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { ArrowRight, Trophy, Calendar } from "@phosphor-icons/react";
 import { LiveDot } from "@/components/ui/live-dot";
 import { Button } from "@/components/ui/button";
-import { teams } from "@/data/mock";
+import { useEditionTeams } from "@/lib/use-edition";
 
 const stats = [
   { num: "9", label: "Times", color: "text-blue" },
@@ -12,7 +12,9 @@ const stats = [
 ];
 
 export function Hero() {
+  const { teams } = useEditionTeams("valorant");
   const leader = teams[0];
+  const leaderName = leader?.name ?? "—";
 
   return (
     <section className="relative overflow-hidden bg-bg border-b border-border">
@@ -158,7 +160,7 @@ export function Hero() {
                   Líder do Ranking
                 </div>
                 <div className="font-display italic font-black text-[26px] text-blue leading-none mt-1">
-                  {leader.name}
+                  {leaderName}
                 </div>
               </div>
               <div>

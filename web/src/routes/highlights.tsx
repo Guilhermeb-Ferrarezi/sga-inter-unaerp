@@ -85,66 +85,76 @@ function HighlightsPage() {
 
       <Section decoNum="06">
         {/* FEATURED */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className="bg-white border-[1.5px] border-border-strong shadow-brutal-lg grid lg:grid-cols-[1.4fr_1fr] overflow-hidden mt-6 mb-9"
-        >
-          <div className="aspect-video relative bg-gradient-to-br from-navy via-blue to-teal">
-            <div
-              className="absolute inset-0"
-              style={{
-                background:
-                  "radial-gradient(circle at center, transparent 30%, rgba(0,0,0,0.4) 100%)",
-              }}
-            />
-            <span className="absolute top-4 left-4 bg-lime text-navy px-3 py-1.5 font-display italic font-black text-[11px] uppercase tracking-[0.1em] flex items-center gap-1.5 z-10">
-              <Star weight="fill" size={11} />
-              Destaque
-            </span>
-            <button className="absolute inset-0 flex items-center justify-center z-10 group">
-              <div className="w-20 h-20 bg-lime text-navy flex items-center justify-center [box-shadow:6px_6px_0_#0A1A3D] group-hover:scale-105 group-hover:[box-shadow:8px_8px_0_#0A1A3D] transition-all">
-                <Play weight="fill" size={28} />
+        {featured && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="bg-white border-[1.5px] border-border-strong shadow-brutal-lg grid lg:grid-cols-[1.4fr_1fr] overflow-hidden mt-6 mb-9"
+          >
+            <div className="aspect-video relative bg-gradient-to-br from-navy via-blue to-teal">
+              <div
+                className="absolute inset-0"
+                style={{
+                  background:
+                    "radial-gradient(circle at center, transparent 30%, rgba(0,0,0,0.4) 100%)",
+                }}
+              />
+              <span className="absolute top-4 left-4 bg-lime text-navy px-3 py-1.5 font-display italic font-black text-[11px] uppercase tracking-[0.1em] flex items-center gap-1.5 z-10">
+                <Star weight="fill" size={11} />
+                Destaque
+              </span>
+              <button className="absolute inset-0 flex items-center justify-center z-10 group">
+                <div className="w-20 h-20 bg-lime text-navy flex items-center justify-center [box-shadow:6px_6px_0_#0A1A3D] group-hover:scale-105 group-hover:[box-shadow:8px_8px_0_#0A1A3D] transition-all">
+                  <Play weight="fill" size={28} />
+                </div>
+              </button>
+              <span className="absolute bottom-4 right-4 bg-navy text-white px-2.5 py-1 font-display italic font-black text-[13px] z-10">
+                0:42
+              </span>
+            </div>
+            <div className="p-9 flex flex-col justify-center">
+              <div className="font-display italic font-extrabold text-teal text-[12px] uppercase tracking-[0.12em] mb-2.5">
+                {featured.category} · Round Decisivo
               </div>
-            </button>
-            <span className="absolute bottom-4 right-4 bg-navy text-white px-2.5 py-1 font-display italic font-black text-[13px] z-10">
-              0:42
-            </span>
-          </div>
-          <div className="p-9 flex flex-col justify-center">
-            <div className="font-display italic font-extrabold text-teal text-[12px] uppercase tracking-[0.12em] mb-2.5">
-              {featured.category} · Round Decisivo
+              <div className="font-display italic font-black text-[42px] uppercase text-navy leading-[0.95] tracking-[-0.02em] mb-3.5">
+                {featured.title}
+              </div>
+              <p className="text-fg-soft text-[14px] leading-[1.6] mb-5.5">
+                Round 22 da partida. Match point. Entra sozinho no site, vira pra
+                cima dos três que fechavam pelo lado — clip definidor do
+                campeonato.
+              </p>
+              <div className="flex gap-5.5 pt-4.5 border-t-[1.5px] border-border">
+                <FeatCredit label="Mapa" value={featured.map ?? "—"} />
+                <FeatCredit
+                  label="Publicado"
+                  value={`${featured.publishedDaysAgo}d atrás`}
+                />
+                <FeatCredit
+                  label="Views"
+                  value={`${(featured.views / 1000).toFixed(1)}K`}
+                  color="text-lime"
+                />
+              </div>
             </div>
-            <div className="font-display italic font-black text-[42px] uppercase text-navy leading-[0.95] tracking-[-0.02em] mb-3.5">
-              {featured.title}
-            </div>
-            <p className="text-fg-soft text-[14px] leading-[1.6] mb-5.5">
-              Round 22 da partida. Match point. Entra sozinho no site, vira pra
-              cima dos três que fechavam pelo lado — clip definidor do
-              campeonato.
-            </p>
-            <div className="flex gap-5.5 pt-4.5 border-t-[1.5px] border-border">
-              <FeatCredit label="Mapa" value={featured.map ?? "—"} />
-              <FeatCredit
-                label="Publicado"
-                value={`${featured.publishedDaysAgo}d atrás`}
-              />
-              <FeatCredit
-                label="Views"
-                value={`${(featured.views / 1000).toFixed(1)}K`}
-                color="text-lime"
-              />
-            </div>
-          </div>
-        </motion.div>
+          </motion.div>
+        )}
 
         {/* GRID */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4.5">
-          {rest.map((h) => (
-            <HighlightCard key={h.id} highlight={h} />
-          ))}
-        </div>
+        {rest.length > 0 ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4.5">
+            {rest.map((h) => (
+              <HighlightCard key={h.id} highlight={h} />
+            ))}
+          </div>
+        ) : (
+          !featured && (
+            <div className="text-center py-16 text-fg-mute font-display italic font-extrabold uppercase">
+              Sem highlights publicados ainda.
+            </div>
+          )
+        )}
       </Section>
     </>
   );
