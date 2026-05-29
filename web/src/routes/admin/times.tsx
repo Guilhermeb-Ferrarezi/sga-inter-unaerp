@@ -9,7 +9,7 @@ import { RowActions } from "@/components/admin/RowActions";
 import { TeamLogo } from "@/components/ui/team-logo";
 import { Button } from "@/components/ui/button";
 import { useEditionTeams } from "@/lib/use-edition";
-import { CREATE_TEAM } from "@/lib/graphql/queries";
+import { CREATE_TEAM, ADD_TEAM_TO_EDITION } from "@/lib/graphql/queries";
 import { cn } from "@/lib/utils";
 import type { Team } from "@/data/types";
 
@@ -19,7 +19,7 @@ export const Route = createFileRoute("/admin/times")({
 
 function AdminTeamsPage() {
   const [showForm, setShowForm] = useState(false);
-  const { teams, loading } = useEditionTeams("valorant");
+  const { teams, loading, edition } = useEditionTeams("valorant");
   const [localTeams, setLocalTeams] = useState<Team[]>([]);
 
   useEffect(() => {
@@ -42,6 +42,7 @@ function AdminTeamsPage() {
       <div className="p-9">
         {showForm && (
           <NewTeamForm
+            editionId={edition?.id ?? null}
             onClose={() => setShowForm(false)}
             onCreated={(t) => {
               setLocalTeams((prev) => [t, ...prev]);
@@ -156,9 +157,11 @@ type FormState = {
 };
 
 function NewTeamForm({
+  editionId,
   onClose,
   onCreated,
 }: {
+  editionId: string | null;
   onClose: () => void;
   onCreated: (team: Team) => void;
 }) {
@@ -169,7 +172,13 @@ function NewTeamForm({
     group: "A",
     captainIgn: "",
   });
-  const [createTeam, { loading, error }] = useMutation(CREATE_TEAM);
+  const [createTeam] = useMutation(CREATE_TEAM);
+  const [addTeamToEdition] = useMutation(ADD_TEAM_TO_EDITION, {
+    refetchQueries: ["ActiveEdition"],
+    awaitRefetchQueries: true,
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
   const [success, setSuccess] = useState(false);
 
   const update = (k: keyof FormState, v: string) =>
@@ -202,18 +211,28 @@ function NewTeamForm({
       captainIgn: form.captainIgn || "—",
     };
 
+    setLoading(true);
+    setError(null);
     try {
-      await createTeam({
+      const teamRes = await createTeam({
         variables: {
           name: form.name,
           slug: form.slug,
           primaryColor: form.color,
         },
       });
+      const newTeamId = teamRes.data?.createTeam?.id;
+      if (newTeamId && editionId) {
+        await addTeamToEdition({
+          variables: { editionId, teamId: newTeamId },
+        });
+      }
       setSuccess(true);
       onCreated(optimisticTeam);
-    } catch {
-      // erro tratado via error state do Apollo, não insere local
+    } catch (e) {
+      setError(e as Error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -236,6 +255,20 @@ function NewTeamForm({
           ✕ Cancelar
         </button>
       </div>
+
+      {!editionId && (
+        <div className="mb-5 bg-[#F5B700]/15 border border-[#F5B700] text-navy p-3.5 flex items-start gap-3 text-[12.5px]">
+          <WarningCircle weight="fill" size={18} className="shrink-0 mt-0.5" />
+          <div>
+            <strong className="font-display italic font-extrabold uppercase mr-2">
+              Sem edição ativa
+            </strong>
+            O time será criado, mas precisa de uma edição em andamento pra
+            aparecer na listagem. Crie/abra uma edição em /admin/edicoes
+            primeiro.
+          </div>
+        </div>
+      )}
 
       {error && (
         <div className="mb-5 bg-red-500/10 border border-red-500 text-navy p-3.5 flex items-start gap-3 text-[12.5px]">

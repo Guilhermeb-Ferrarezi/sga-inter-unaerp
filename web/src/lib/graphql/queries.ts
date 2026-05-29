@@ -232,6 +232,21 @@ export const CREATE_TEAM = gql`
   ${TEAM_FRAGMENT}
 `;
 
+export const ADD_TEAM_TO_EDITION = gql`
+  mutation AddTeamToEdition($editionId: UUID!, $teamId: UUID!, $seed: Int) {
+    addTeamToEdition(editionId: $editionId, teamId: $teamId, seed: $seed) {
+      id
+      wins
+      losses
+      finalPlacement
+      team {
+        ...TeamFields
+      }
+    }
+  }
+  ${TEAM_FRAGMENT}
+`;
+
 export const CREATE_PLAYER = gql`
   mutation CreatePlayer(
     $ign: String!
