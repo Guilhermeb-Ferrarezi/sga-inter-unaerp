@@ -16,7 +16,7 @@ export default defineConfig({
     screenshot: "only-on-failure",
   },
   webServer: {
-    command: "bun run build && bun run preview --port 4173 --host",
+    command: "npx vite preview --port 4173 --host",
     url: baseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,

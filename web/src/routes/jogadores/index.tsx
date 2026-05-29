@@ -6,8 +6,8 @@ import { Section } from "@/components/ui/section";
 import { FilterPill } from "@/components/ui/filter-pill";
 import { TeamLogo } from "@/components/ui/team-logo";
 import { PlayerPodium } from "@/components/cards/PlayerPodium";
-import { Button } from "@/components/ui/button";
-import { players, findTeam } from "@/data/mock";
+import { useEditionPlayers } from "@/lib/use-players";
+import { useEditionTeams } from "@/lib/use-edition";
 import { cn } from "@/lib/utils";
 import type { Player } from "@/data/types";
 
@@ -36,6 +36,8 @@ const sortBy = (key: SortKey) => (a: Player, b: Player) => {
 function PlayersPage() {
   const [sort, setSort] = useState<SortKey>("kd");
   const [roleFilter, setRoleFilter] = useState<string>("all");
+  const { players, loading } = useEditionPlayers("valorant");
+  const { teams } = useEditionTeams("valorant");
 
   const filtered = players
     .filter((p) => roleFilter === "all" || p.role === roleFilter)
@@ -54,7 +56,11 @@ function PlayersPage() {
             Ranking <span className="text-lime">de Jogadores</span>
           </>
         }
-        subtitle="47 jogadores registrados. Ranking atualizado a cada partida com dados oficiais de in-game."
+        subtitle={
+          players.length === 0
+            ? "Ranking atualizado a cada partida com dados oficiais de in-game."
+            : `${players.length} jogadores registrados. Ranking atualizado a cada partida.`
+        }
       >
         <div className="flex gap-1 mt-6 border-b-2 border-navy">
           {(Object.keys(sortLabels) as SortKey[]).map((k) => (
@@ -93,15 +99,30 @@ function PlayersPage() {
       </PageHeader>
 
       <Section decoNum="TOP">
-        <PlayerPodium top3={top3} />
-
-        <PlayersTable players={filtered} sortKey={sort} />
-
-        <div className="text-center mt-9">
-          <Button variant="ghost" size="md">
-            Carregar mais jogadores
-          </Button>
-        </div>
+        {loading ? (
+          <div className="text-center py-16 text-fg-mute font-display italic font-extrabold uppercase">
+            Carregando jogadores…
+          </div>
+        ) : players.length === 0 ? (
+          <div className="bg-white border-[1.5px] border-border-strong p-9 text-center mt-6">
+            <div className="font-display italic font-black text-[28px] uppercase text-navy mb-3">
+              Sem jogadores registrados
+            </div>
+            <p className="text-fg-soft text-[14px] leading-relaxed max-w-md mx-auto">
+              Os jogadores aparecem aqui assim que os rosters dos times forem
+              cadastrados.
+            </p>
+          </div>
+        ) : (
+          <>
+            <PlayerPodium top3={top3} />
+            <PlayersTable
+              players={filtered}
+              sortKey={sort}
+              teams={teams}
+            />
+          </>
+        )}
       </Section>
     </>
   );
@@ -110,10 +131,13 @@ function PlayersPage() {
 function PlayersTable({
   players: list,
   sortKey,
+  teams,
 }: {
   players: Player[];
   sortKey: SortKey;
+  teams: { slug: string; name: string; shortName: string; color: string }[];
 }) {
+  const findTeam = (slug: string) => teams.find((t) => t.slug === slug);
   return (
     <div className="bg-white border-[1.5px] border-border-strong shadow-brutal">
       <div className="grid grid-cols-[50px_1fr_140px_90px_90px_90px_90px] px-5.5 py-3.5 bg-navy">

@@ -10,46 +10,25 @@ import {
 } from "@phosphor-icons/react";
 import { AdminTopbar } from "@/components/admin/AdminTopbar";
 import { Button } from "@/components/ui/button";
+import { useEditionGallery, useEditionHighlights } from "@/lib/use-highlights";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/admin/midia")({
   component: AdminMediaPage,
 });
 
-const photoVariants = [
-  "from-[#0E4D8C] to-[#2EAA80]",
-  "from-[#2EAA80] to-[#A4CD3A]",
-  "from-[#0A1A3D] to-[#0073B7]",
-  "from-[#A4CD3A] to-[#0073B7]",
-  "from-[#0073B7] to-[#0A1A3D]",
-  "from-[#EC4899] to-[#2EAA80]",
-];
-
-const recentUploads = Array.from({ length: 18 }).map((_, i) => ({
-  id: `m${i}`,
-  caption: [
-    "g1lh em ação",
-    "Bastidores Thunder",
-    "Hi-5 do Dragon",
-    "Roster Nova",
-    "Atenção pré-partida",
-    "Vitória Eclipse",
-  ][i % 6],
-  variant: photoVariants[i % photoVariants.length],
-  size: ["1.2 MB", "2.4 MB", "850 KB", "1.7 MB", "3.1 MB"][i % 5],
-  date: ["agora", "5 min atrás", "1h atrás", "3h atrás", "1d atrás"][i % 5],
-}));
-
 function AdminMediaPage() {
   const [dragOver, setDragOver] = useState(false);
+  const { photos } = useEditionGallery("valorant");
+  const { highlights } = useEditionHighlights("valorant");
 
   return (
     <>
       <AdminTopbar
         title="Mídia"
-        subtitle="252 fotos · 37 vídeos · Cloudflare R2 + Stream"
+        subtitle={`${photos.length} fotos · ${highlights.length} vídeos · Cloudflare R2 + Stream`}
         actions={
-          <Button>
+          <Button disabled>
             <UploadSimple weight="bold" size={14} />
             Upload em massa
           </Button>
@@ -118,29 +97,30 @@ function AdminMediaPage() {
                 Uploads recentes
               </div>
               <span className="text-[11px] text-fg-mute font-extrabold uppercase tracking-[0.1em]">
-                {recentUploads.length} arquivos
+                {photos.length} arquivos
               </span>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 p-4">
-              {recentUploads.map((u) => (
-                <div
-                  key={u.id}
-                  className={cn(
-                    "aspect-square bg-gradient-to-br relative cursor-pointer group",
-                    u.variant
-                  )}
-                >
-                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-navy/85 to-transparent p-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <div className="font-display italic font-extrabold text-[11px] uppercase text-white leading-tight truncate">
-                      {u.caption}
-                    </div>
-                    <div className="text-[9px] text-white/70 font-bold uppercase tracking-[0.06em] mt-0.5">
-                      {u.size} · {u.date}
-                    </div>
+            {photos.length === 0 ? (
+              <div className="text-center py-12 text-fg-mute text-[13px]">
+                Nenhuma foto enviada ainda. Use a área acima pra fazer upload.
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 p-4">
+                {photos.slice(0, 24).map((u, i) => (
+                  <div
+                    key={i}
+                    className="aspect-square bg-surface-3 border border-border relative cursor-pointer group overflow-hidden"
+                  >
+                    <img
+                      src={u.publicUrl}
+                      alt=""
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -152,38 +132,11 @@ function AdminMediaPage() {
               Pastas no R2
             </div>
             <div className="space-y-1.5">
-              <FolderRow name="unaerp/2025/matches" count={142} />
-              <FolderRow name="unaerp/2025/backstage" count={58} />
-              <FolderRow name="unaerp/2025/teams" count={42} />
-              <FolderRow name="unaerp/2024" count={189} />
-              <FolderRow name="unaerp/2023" count={142} />
-              <FolderRow name="unaerp/2022" count={98} />
+              <FolderRow name="universitarios/inter-unaerp/" count={photos.length} />
             </div>
-          </div>
-
-          <div className="bg-white border-[1.5px] border-border-strong p-5 shadow-brutal-sm">
-            <div className="font-display italic font-black text-[16px] uppercase text-navy mb-4 pb-2.5 border-b border-border">
-              Storage R2
-            </div>
-            <div className="space-y-3">
-              <div>
-                <div className="flex justify-between text-[12px] text-fg-soft mb-1.5">
-                  <span>Usado</span>
-                  <span className="font-display italic font-black text-navy">
-                    2.1 GB / 10 GB
-                  </span>
-                </div>
-                <div className="h-3 bg-surface-3 border border-border">
-                  <div
-                    className="h-full bg-gradient-to-r from-blue via-teal to-lime"
-                    style={{ width: "21%" }}
-                  />
-                </div>
-              </div>
-              <div className="text-[11px] text-fg-mute">
-                Custo estimado:{" "}
-                <strong className="text-navy">$0.31 / mês</strong>
-              </div>
+            <div className="text-[10.5px] text-fg-mute mt-3 leading-relaxed">
+              Listagem detalhada por pasta requer integração com API R2 (não
+              implementado no GraphQL ainda).
             </div>
           </div>
 

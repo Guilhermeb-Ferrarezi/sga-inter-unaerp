@@ -11,7 +11,8 @@ import {
 
 export type LightboxPhoto = {
   id: string;
-  gradient: string; // tailwind classes
+  src?: string;
+  gradient?: string; // tailwind classes (fallback quando não tem src)
   caption: string;
   info: string;
 };
@@ -119,11 +120,24 @@ export function PhotoLightbox({
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: 0.95 }}
                       transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                      className={`relative max-w-5xl w-full aspect-video bg-gradient-to-br ${current.gradient}`}
+                      className={`relative max-w-5xl w-full ${
+                        current.src
+                          ? ""
+                          : `aspect-video bg-gradient-to-br ${current.gradient ?? ""}`
+                      }`}
                     >
-                      {/* placeholder ornament */}
-                      <div className="absolute top-3 left-3 w-10 h-10 border-t-[3px] border-l-[3px] border-lime" />
-                      <div className="absolute bottom-3 right-3 w-10 h-10 border-b-[3px] border-r-[3px] border-lime" />
+                      {current.src ? (
+                        <img
+                          src={current.src}
+                          alt={current.caption}
+                          className="w-full h-auto max-h-[80vh] object-contain mx-auto"
+                        />
+                      ) : (
+                        <>
+                          <div className="absolute top-3 left-3 w-10 h-10 border-t-[3px] border-l-[3px] border-lime" />
+                          <div className="absolute bottom-3 right-3 w-10 h-10 border-b-[3px] border-r-[3px] border-lime" />
+                        </>
+                      )}
                     </motion.div>
                   </AnimatePresence>
                   {/* Next */}
@@ -145,13 +159,23 @@ export function PhotoLightbox({
                       <button
                         key={p.id}
                         onClick={() => onChange(idx)}
-                        className={`w-16 h-12 bg-gradient-to-br ${p.gradient} transition-opacity ${
+                        className={`w-16 h-12 overflow-hidden transition-opacity ${
+                          p.src ? "bg-navy" : `bg-gradient-to-br ${p.gradient ?? ""}`
+                        } ${
                           idx === currentIndex
                             ? "opacity-100 ring-2 ring-lime"
                             : "opacity-50 hover:opacity-80"
                         }`}
                         aria-label={`Foto ${idx + 1}`}
-                      />
+                      >
+                        {p.src && (
+                          <img
+                            src={p.src}
+                            alt=""
+                            className="w-full h-full object-cover"
+                          />
+                        )}
+                      </button>
                     ))}
                   </div>
                 </div>

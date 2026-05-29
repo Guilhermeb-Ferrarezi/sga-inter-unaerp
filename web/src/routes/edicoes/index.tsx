@@ -32,7 +32,7 @@ function EditionsPage() {
             Edições <span className="text-blue">Anteriores</span>
           </>
         }
-        subtitle="Histórico completo do Inter UnaERP desde 2022. Cada edição tem times, jogadores, partidas e galeria preservados — campeões e gerações documentadas para sempre."
+        subtitle="Histórico do Inter UnaERP. Cada edição preserva times, jogadores, partidas e galeria — campeões e gerações documentadas para sempre."
       />
 
       <Section decoNum="HIST">
@@ -103,6 +103,17 @@ function EditionsPage() {
           }
         />
 
+        {past.length === 0 ? (
+          <div className="bg-white border-[1.5px] border-border-strong p-9 text-center mt-4">
+            <div className="font-display italic font-black text-[24px] uppercase text-navy mb-2">
+              Sem edições anteriores
+            </div>
+            <p className="text-fg-soft text-[13px] leading-relaxed max-w-md mx-auto">
+              Quando a edição atual for finalizada, ela aparece aqui no
+              histórico junto com campeão, MVP e galeria.
+            </p>
+          </div>
+        ) : (
         <div className="relative pl-20 mt-4">
           <div className="absolute left-[38px] top-0 bottom-0 w-[3px] bg-navy" />
           {past.map((e, idx) => {
@@ -161,6 +172,7 @@ function EditionsPage() {
             );
           })}
         </div>
+        )}
       </Section>
     </>
   );

@@ -25,6 +25,16 @@ export function StandingsTable({
 }: StandingsTableProps) {
   const list = topCount ? teams.slice(0, topCount) : teams;
 
+  if (list.length === 0) {
+    return (
+      <div className="bg-white border-[1.5px] border-border-strong shadow-brutal p-9 text-center">
+        <div className="text-fg-mute font-display italic font-extrabold uppercase tracking-[0.08em] text-[13px]">
+          Sem times cadastrados na edição
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white border-[1.5px] border-border-strong shadow-brutal">
       <div

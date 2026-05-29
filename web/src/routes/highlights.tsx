@@ -6,7 +6,8 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Section } from "@/components/ui/section";
 import { FilterPill } from "@/components/ui/filter-pill";
 import { HighlightCard } from "@/components/cards/HighlightCard";
-import { highlights, teams } from "@/data/mock";
+import { useEditionHighlights } from "@/lib/use-highlights";
+import { useEditionTeams } from "@/lib/use-edition";
 import { cn } from "@/lib/utils";
 import type { Highlight } from "@/data/types";
 
@@ -19,6 +20,8 @@ type CatFilter = "all" | Highlight["category"];
 function HighlightsPage() {
   const [cat, setCat] = useState<CatFilter>("all");
   const [team, setTeam] = useState<string>("all");
+  const { highlights, loading } = useEditionHighlights("valorant");
+  const { teams } = useEditionTeams("valorant");
 
   const featured = highlights[0];
   const rest = highlights
@@ -37,7 +40,11 @@ function HighlightsPage() {
             Highlights da <span className="text-lime">Edição</span>
           </>
         }
-        subtitle="37 clipes publicados nesta edição. Aces, clutches, jogadas decisivas e recaps de cada rodada — hospedados em Cloudflare Stream."
+        subtitle={
+          highlights.length === 0
+            ? "Aces, clutches, jogadas decisivas e recaps de cada rodada — hospedados em Cloudflare Stream."
+            : `${highlights.length} clipes publicados. Aces, clutches, jogadas decisivas — Cloudflare Stream.`
+        }
       >
         <div className="flex gap-1 mt-6 border-b-2 border-navy">
           {(
@@ -84,6 +91,11 @@ function HighlightsPage() {
       </PageHeader>
 
       <Section decoNum="06">
+        {loading && (
+          <div className="text-center py-16 text-fg-mute font-display italic font-extrabold uppercase">
+            Carregando highlights…
+          </div>
+        )}
         {/* FEATURED */}
         {featured && (
           <motion.div

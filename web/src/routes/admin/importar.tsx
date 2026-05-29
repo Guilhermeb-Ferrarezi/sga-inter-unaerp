@@ -10,6 +10,7 @@ import {
 } from "@phosphor-icons/react";
 import { AdminTopbar } from "@/components/admin/AdminTopbar";
 import { Button } from "@/components/ui/button";
+import { useEditions } from "@/lib/use-editions";
 
 export const Route = createFileRoute("/admin/importar")({
   component: AdminImportPage,
@@ -50,6 +51,8 @@ function AdminImportPage() {
   );
   const [parsed, setParsed] = useState<any>(null);
   const [error, setError] = useState("");
+  const { editions } = useEditions("valorant");
+  const past = editions.filter((e) => e.status === "finished").slice(0, 5);
 
   const validate = () => {
     setStatus("validating");
@@ -202,21 +205,32 @@ function AdminImportPage() {
 
           <div className="bg-white border-[1.5px] border-border-strong p-5 shadow-brutal-sm">
             <div className="font-display italic font-black text-[16px] uppercase text-navy mb-4 pb-2.5 border-b border-border">
-              Imports recentes
+              Edições importadas
             </div>
-            <div className="space-y-2.5">
-              <ImportRow year="2024" status="finished" teams={8} when="3 sem atrás" />
-              <ImportRow year="2023" status="finished" teams={6} when="3 sem atrás" />
-              <ImportRow year="2022" status="finished" teams={6} when="1 mês atrás" />
-            </div>
+            {past.length === 0 ? (
+              <div className="text-[12px] text-fg-mute py-3 text-center">
+                Nenhuma edição finalizada ainda.
+              </div>
+            ) : (
+              <div className="space-y-2.5">
+                {past.map((e) => (
+                  <ImportRow
+                    key={e.year}
+                    year={e.year.toString()}
+                    status={e.status}
+                    teams={e.teamsCount}
+                  />
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="bg-blue/[0.08] border-[1.5px] border-blue/30 p-4">
             <div className="text-[11px] text-blue font-extrabold uppercase tracking-[0.1em] mb-1.5">
-              Dica do Henrique
+              Dica
             </div>
             <div className="text-[12px] text-fg-soft leading-relaxed">
-              Use o sistema de slugs únicos por edição (ex: <code className="bg-white px-1 text-[11px]">olimpo-2024</code>) pra evitar colisões com times atuais.
+              Use slugs únicos por edição (ex: <code className="bg-white px-1 text-[11px]">olimpo-2024</code>) pra evitar colisões com times atuais.
             </div>
           </div>
         </div>
@@ -253,12 +267,10 @@ function ImportRow({
   year,
   status,
   teams,
-  when,
 }: {
   year: string;
   status: string;
   teams: number;
-  when: string;
 }) {
   return (
     <div className="flex items-center gap-3 py-1.5 px-2 hover:bg-surface-3 cursor-pointer transition-colors">
@@ -268,7 +280,7 @@ function ImportRow({
           Inter UnaERP {year}
         </div>
         <div className="text-[10px] text-fg-mute font-bold uppercase tracking-[0.06em]">
-          {teams} times · {when} · {status}
+          {teams} times · {status}
         </div>
       </div>
     </div>

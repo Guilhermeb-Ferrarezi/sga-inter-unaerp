@@ -54,7 +54,11 @@ function MatchesPage() {
             Agenda <span className="text-teal">de Partidas</span>
           </>
         }
-        subtitle="24 partidas previstas na fase de grupos · 12 disputadas até agora. Todas em MD1."
+        subtitle={
+          matches.length === 0
+            ? "Partidas aparecem aqui assim que forem cadastradas. Todas em MD1."
+            : `${matches.length} partidas previstas · ${counts.done} disputadas até agora. Todas em MD1.`
+        }
       >
         <div className="flex gap-1 mt-6 border-b-2 border-navy">
           {(

@@ -4,17 +4,24 @@ import { ArrowRight, Trophy, Calendar } from "@phosphor-icons/react";
 import { LiveDot } from "@/components/ui/live-dot";
 import { Button } from "@/components/ui/button";
 import { useEditionTeams } from "@/lib/use-edition";
-
-const stats = [
-  { num: "9", label: "Times", color: "text-blue" },
-  { num: "47", label: "Jogadores", color: "text-teal" },
-  { num: "12", small: "/24", label: "Partidas", color: "text-lime" },
-];
+import { useEditionMatches, isDone } from "@/lib/use-matches";
 
 export function Hero() {
   const { teams } = useEditionTeams("valorant");
+  const { matches } = useEditionMatches("valorant");
   const leader = teams[0];
   const leaderName = leader?.name ?? "—";
+  const doneCount = matches.filter(isDone).length;
+  const stats = [
+    { num: teams.length.toString(), label: "Times", color: "text-blue" },
+    { num: "—", label: "Jogadores", color: "text-teal" },
+    {
+      num: doneCount.toString(),
+      small: matches.length > 0 ? `/${matches.length}` : undefined,
+      label: "Partidas",
+      color: "text-lime",
+    },
+  ];
 
   return (
     <section className="relative overflow-hidden bg-bg border-b border-border">

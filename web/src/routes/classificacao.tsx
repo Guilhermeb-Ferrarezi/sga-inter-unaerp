@@ -55,7 +55,7 @@ function StandingsPage() {
             Dados ao vivo · PostgreSQL via GraphQL
           </div>
         )}
-        <div className="grid lg:grid-cols-[1fr_360px] gap-7">
+        <div className="grid lg:grid-cols-[1fr_360px] gap-7 items-start">
           <StandingsTable teams={sorted} qualifyCutoff={4} />
 
           <div className="space-y-5.5">
@@ -76,50 +76,25 @@ function StandingsPage() {
               />
             </SidebarCard>
 
-            <SidebarCard title="Stats da Edição" dotColor="teal">
+            <SidebarCard title="Resumo da Edição" dotColor="teal">
               <div className="grid grid-cols-2 gap-3.5">
-                <StatItem label="Maior placar" value="13·5" color="text-lime" />
-                <StatItem label="Maior virada" value="12→13" color="text-teal" />
-                <StatItem label="Rounds disputados" value="312" />
-                <StatItem label="Aces" value="7" color="text-blue" />
-                <StatItem label="Clutches" value="11" />
+                <StatItem label="Times" value={teams.length.toString()} color="text-blue" />
                 <StatItem
-                  label="MVP atual"
-                  value="g1lh"
+                  label="Classificados"
+                  value={Math.min(4, teams.length).toString()}
                   color="text-lime"
-                  small
                 />
               </div>
-            </SidebarCard>
-
-            <SidebarCard title="Mapas Mais Jogados" dotColor="blue">
-              {[
-                ["Ascent", 5, "text-lime"],
-                ["Bind", 3, ""],
-                ["Haven", 2, ""],
-                ["Pearl", 1, ""],
-                ["Lotus", 1, ""],
-              ].map(([name, count, color]) => (
-                <div
-                  key={name as string}
-                  className="flex justify-between py-1.5 text-[12px] text-fg-soft font-bold"
-                >
-                  <span>{name}</span>
-                  <span
-                    className={cn(
-                      "font-display italic font-black",
-                      color as string || "text-navy"
-                    )}
-                  >
-                    {count}
-                  </span>
-                </div>
-              ))}
+              <div className="text-[11px] text-fg-mute mt-3 leading-relaxed">
+                Estatísticas detalhadas (rounds, aces, clutches, MVP) chegam
+                quando o tracking in-game estiver integrado.
+              </div>
             </SidebarCard>
           </div>
         </div>
 
         {/* GROUPS */}
+        {teams.length > 0 && (
         <div className="grid md:grid-cols-3 gap-5 mt-9">
           {groups.map((g, idx) => (
             <motion.div
@@ -171,6 +146,7 @@ function StandingsPage() {
             </motion.div>
           ))}
         </div>
+        )}
       </Section>
     </>
   );
